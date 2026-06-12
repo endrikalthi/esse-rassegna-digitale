@@ -663,7 +663,6 @@ function doPDF(){
     var includeTotals=document.getElementById('include-totals')&&document.getElementById('include-totals').checked;
     var hasStats=includeTotals&&posts.some(function(p){return p.views||p.likes||p.comments||p.saves;});
 
-    // Calcola stats data prima per sapere altezza totale
     var tv=0,tl=0,tc=0,ts=0;
     if(hasStats){
       posts.forEach(function(p){
@@ -676,91 +675,77 @@ function doPDF(){
       {label:'COMMENTI',val:tc},{label:'SALVATAGGI',val:ts}
     ].filter(function(b){return b.val>0;}):[];
 
-    // Dimensioni elementi (in mm)
-    var LW=42;  // logo width
-    var MW=48;  // mascot width
-    var NFS=58; // name font size pt → ~20mm height
-    var SBH=36; // stats box height
-    var SMARG=14, SGAP=7;
+    // Misure calibrate sul template
+    var LW=42, LH=logoI?Math.round(LW*(logoI.naturalHeight/logoI.naturalWidth)):20;
+    var MW=50, MH=mascotI?Math.round(MW*(mascotI.naturalHeight/mascotI.naturalWidth)):58;
+    var NFS=62;  // nome 62pt — occupa ~40% larghezza come nel template
+    var SFS=10;  // subtitle 10pt
+    var CFS=11;  // count 11pt bold
+    var SBH=38, SMARG=14, SGAP=7;
 
-    // Calcola altezze reali
-    var LH=logoI?Math.round(LW*(logoI.naturalHeight/logoI.naturalWidth)):20;
-    var MH=mascotI?Math.round(MW*(mascotI.naturalHeight/mascotI.naturalWidth)):55;
+    // Gap minimi tra elementi — tutto più compatto
+    var G1=1;   // logo→mascot
+    var G2=3;   // mascot→nome
+    var G3=5;   // nome→subtitle
+    var G4=3;   // subtitle→count
+    var G5=sblocks.length>0?16:0; // count→stats
 
-    // Blocco testo: nome+sub+cnt
-    var NAME_H=NFS*0.352; // pt to mm approx
-    var SUB_H=9*0.352;
-    var CNT_H=10*0.352;
-    var NAME_SUB_GAP=7;
-    var SUB_CNT_GAP=4;
-    var textBlockH=NAME_H+NAME_SUB_GAP+SUB_H+SUB_CNT_GAP+CNT_H;
-
-    // Gap tra elementi
-    var LOGO_MASC_GAP=1;
-    var MASC_NAME_GAP=4;
-    var TEXT_STATS_GAP=sblocks.length>0?14:0;
-    var statsBlockH=sblocks.length>0?SBH:0;
-
-    // Altezza totale
-    var totalH=LH+LOGO_MASC_GAP+MH+MASC_NAME_GAP+textBlockH+TEXT_STATS_GAP+statsBlockH;
-
-    // Centro verticale con leggero shift verso l'alto (come nel template)
-    var startY=(PH-totalH)/2 - 3;
-    if(startY<8)startY=8;
-
+    // Altezze approssimate testo
+    var NH=NFS*0.352, SH=SFS*0.352, CH=CFS*0.352;
+    var statsH=sblocks.length>0?SBH:0;
+    var totalH=LH+G1+MH+G2+NH+G3+SH+G4+CH+G5+statsH;
+    var startY=(PH-totalH)/2-4;
+    if(startY<6)startY=6;
     var cy=startY;
 
     // LOGO
     if(logoI){
       doc.addImage(logoI,'PNG',CX-LW/2,cy,LW,LH,'','FAST');
     }
-    cy+=LH+LOGO_MASC_GAP;
+    cy+=LH+G1;
 
     // MASCOTTE
     if(mascotI){
       doc.addImage(mascotI,'PNG',CX-MW/2,cy,MW,MH,'','FAST');
     }
-    cy+=MH+MASC_NAME_GAP;
+    cy+=MH+G2+NH;
 
-    // NOME ARTISTA — 58pt, Marcin Antique ExtraBlack
-    cy+=NAME_H;
+    // NOME — Marcin ExtraBlack 62pt giallo
     doc.setFont('MarcinXB','normal');
     doc.setFontSize(NFS);
     doc.setTextColor(255,241,114);
     doc.text(a.toUpperCase(),CX,cy,{align:'center'});
-    cy+=NAME_SUB_GAP;
+    cy+=G3+SH;
 
-    // SUBTITLE — 9pt Marcin Condensed
-    cy+=SUB_H;
+    // SUBTITLE — Marcin Condensed 10pt, colore grigio medio
     doc.setFont('MarcinCB','normal');
-    doc.setFontSize(9);
-    doc.setTextColor(110,102,80);
+    doc.setFontSize(SFS);
+    doc.setTextColor(115,107,84);
     doc.text('RASSEGNA CONTENUTI - '+today.toUpperCase(),CX,cy,{align:'center'});
-    cy+=SUB_CNT_GAP;
+    cy+=G4+CH;
 
-    // COUNT — 10pt Marcin Condensed bold
-    cy+=CNT_H;
+    // COUNT — Marcin Condensed 11pt bold, più luminoso
     doc.setFont('MarcinCB','normal');
-    doc.setFontSize(10.5);
-    doc.setTextColor(182,174,144);
+    doc.setFontSize(CFS);
+    doc.setTextColor(190,182,152);
     doc.text(posts.length+' CONTENUTI PUBBLICATI',CX,cy,{align:'center'});
-    cy+=TEXT_STATS_GAP;
+    cy+=G5;
 
-    // STATS BOXES
+    // STATS
     if(sblocks.length>0){
       var sbw=(PW-SMARG*2-SGAP*(sblocks.length-1))/sblocks.length;
       var sbx=SMARG;
       sblocks.forEach(function(b){
         doc.setFillColor(255,241,114);
         doc.roundedRect(sbx,cy,sbw,SBH,5,5,'F');
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(24);
+        doc.setFont('MarcinXB','normal');
+        doc.setFontSize(26);
         doc.setTextColor(20,17,12);
-        doc.text(formatNum(b.val),sbx+sbw/2,cy+15,{align:'center'});
-        doc.setFont('helvetica','normal');
-        doc.setFontSize(7);
+        doc.text(formatNum(b.val),sbx+sbw/2,cy+16,{align:'center'});
+        doc.setFont('MarcinCB','normal');
+        doc.setFontSize(7.5);
         doc.setTextColor(50,42,18);
-        doc.text(b.label,sbx+sbw/2,cy+27,{align:'center'});
+        doc.text(b.label,sbx+sbw/2,cy+28,{align:'center'});
         sbx+=sbw+SGAP;
       });
     }
