@@ -207,6 +207,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div class="fg"><span class="flabel">Caption / Note</span>
         <textarea id="fcap" placeholder="Testo del post o note editoriali..."></textarea></div>
+      <div class="fg"><span class="flabel">Statistiche (opzionale)</span>
+        <input type="text" id="fstats" placeholder="es. 1.2M views · 45K likes · 3.2K commenti" /></div>
       <div class="fg"><span class="flabel">Immagine preview (opzionale)</span>
         <div class="fwrap">
           <div class="ffake">📷 <span id="flbl">Scegli immagine...</span></div>
@@ -311,6 +313,7 @@ function renderP(){
     var card=document.createElement('div');card.className='pcard';
     card.innerHTML=(p.img?'<img class="pthumb" src="'+p.img+'" />':'<div class="pph">\uD83D\uDCF7<span>'+p.plat+'</span></div>')
       +'<div class="pbody"><div class="pmeta"><span class="pbadge '+bc+'">'+p.plat+'</span><span class="pdate">'+(p.date||'\u2014')+'</span></div>'
+      +(p.stats?'<div style="font-size:11px;font-weight:600;color:#0d0d0d;margin-bottom:3px;">'+p.stats+'</div>':'')
       +(p.cap?'<div class="pcap">'+p.cap+'</div>':'')
       +(p.url?'<a href="'+p.url+'" class="plink" target="_blank" rel="noopener">\u2197 '+su+'</a>':'')
       +'</div><div class="pactions">'
@@ -326,13 +329,13 @@ function openM(idx){
     document.getElementById('mtitle').textContent='Nuovo contenuto';
     document.getElementById('furl').value='';document.getElementById('fplat').value='Instagram';
     document.getElementById('fdate').value=new Date().toISOString().split('T')[0];
-    document.getElementById('fcap').value='';document.getElementById('flbl').textContent='Scegli immagine...';
+    document.getElementById('fcap').value='';document.getElementById('fstats').value='';document.getElementById('flbl').textContent='Scegli immagine...';
     document.getElementById('iprev').style.display='none';
   } else {
     var p=S.posts[S.sel][idx];
     document.getElementById('mtitle').textContent='Modifica contenuto';
     document.getElementById('furl').value=p.url||'';document.getElementById('fplat').value=p.plat||'Instagram';
-    document.getElementById('fdate').value=p.date||'';document.getElementById('fcap').value=p.cap||'';
+    document.getElementById('fdate').value=p.date||'';document.getElementById('fcap').value=p.cap||'';document.getElementById('fstats').value=p.stats||'';
     if(p.img){PI=p.img;document.getElementById('flbl').textContent='✓ presente';document.getElementById('iprevimg').src=p.img;document.getElementById('iprev').style.display='';}
     else{document.getElementById('flbl').textContent='Scegli immagine...';document.getElementById('iprev').style.display='none';}
   }
@@ -367,7 +370,7 @@ function rmImg(){PI=null;document.getElementById('flbl').textContent='Scegli imm
 function saveP(){
   var url=document.getElementById('furl').value.trim();
   if(!url){alert('Inserisci il link');return;}
-  var post={url:url,plat:document.getElementById('fplat').value,date:document.getElementById('fdate').value,cap:document.getElementById('fcap').value.trim(),img:PI};
+  var post={url:url,plat:document.getElementById('fplat').value,date:document.getElementById('fdate').value,cap:document.getElementById('fcap').value.trim(),stats:document.getElementById('fstats').value.trim(),img:PI};
   var idx=parseInt(document.getElementById('eidx').value);
   if(idx===-1)S.posts[S.sel].unshift(post);else S.posts[S.sel][idx]=post;
   sv();closeM();renderP();renderA();
@@ -481,6 +484,7 @@ function renderPrev(){
         :'<div class="prev-ph" style="height:180px;">'+p.plat+'</div>')
       +'<div class="prev-meta">'
       +'<div class="prev-badge">'+p.plat+'</div>'
+      +(p.stats?'<div style="font-size:11px;font-weight:700;color:#0d0d0d;margin-bottom:3px;">'+p.stats+'</div>':'')
       +(p.cap?'<div class="prev-cap">'+p.cap+'</div>':'')
       +(p.date?'<div class="prev-date">'+p.date+'</div>':'')
       +(p.url?'<div class="prev-url">'+p.url.replace(/https?:\/\//,'')+'</div>':'')
@@ -536,27 +540,24 @@ function doPDF(){
     doc.setFontSize(8);doc.setTextColor(70,70,70);
     doc.text('esse\u00b0 Magazine \u2014 Rassegna Stampa Digitale',20,PH-10);
     doc.text(today,PW-20,PH-10,{align:'right'});
-    /* PAGINE CONTENUTO - layout adattivo */
-    var perPage = 6;
-    var pages = Math.ceil(posts.length / perPage);
-    var mX=10, mY=10, gap=6;
-    var usableH = PH - mY*2 - 8;
-    var metaH = 38;
+    /* PAGINE CONTENUTO - 4 colonne fisse, 2 righe */
+    var COLS=4, ROWS=2, perPage=COLS*ROWS;
+    var pages=Math.ceil(posts.length/perPage);
+    var mX=8, mY=8, gap=4;
+    var usableH=PH-mY*2-8;
+    var metaH=30;
+    var pgCellW=(PW-mX*2-(COLS-1)*gap)/COLS;
+    var pgCellH=(usableH-(ROWS-1)*gap)/ROWS;
+    var pgImgH=pgCellH-metaH;
 
     for(var pg=0;pg<pages;pg++){
       doc.addPage();
       doc.setFillColor(245,244,240);doc.rect(0,0,PW,PH,'F');
       var slice=posts.slice(pg*perPage,(pg+1)*perPage);
-      // Layout adattivo basato su TOTALE post (non solo questa pagina)
-      var n=posts.length;
-      var pgCols = n===1?1 : n===2?2 : n===4?2 : 3;
-      var pgRows = n<=pgCols ? 1 : 2;
-      var pgCellW = (PW - mX*2 - (pgCols-1)*gap) / pgCols;
-      var pgCellH = (usableH - (pgRows-1)*gap) / pgRows;
-      var pgImgH = pgCellH - metaH;
+      var pgCols=COLS, pgRows=ROWS;
 
       slice.forEach(function(p,idx){
-        var col=idx%pgCols, row=Math.floor(idx/pgCols);
+        var col=idx%COLS, row=Math.floor(idx/COLS);
         var x=mX+col*(pgCellW+gap);
         var y=mY+row*(pgCellH+gap);
 
@@ -597,17 +598,21 @@ function doPDF(){
         // Testo
         var ty=y+pgImgH+5;
         doc.setFillColor(13,13,13);
-        doc.roundedRect(x+3,ty,26,5.5,1,1,'F');
-        doc.setFontSize(6.5);doc.setTextColor(255,241,114);doc.setFont('helvetica','bold');
-        doc.text(p.plat.toUpperCase(),x+16,ty+3.8,{align:'center'});
-        ty+=8;
-        if(p.cap){
-          doc.setFontSize(7.5);doc.setTextColor(75,75,75);doc.setFont('helvetica','normal');
-          var lines=doc.splitTextToSize(p.cap,pgCellW-7);
-          doc.text(lines.slice(0,2),x+3,ty);ty+=lines.slice(0,2).length*4+2;
+        doc.setFillColor(13,13,13);doc.roundedRect(x+2,ty,22,4.5,1,1,'F');
+        doc.setFontSize(5.5);doc.setTextColor(255,241,114);doc.setFont('helvetica','bold');
+        doc.text(p.plat.toUpperCase(),x+13,ty+3.2,{align:'center'});
+        ty+=7;
+        if(p.stats){
+          doc.setFontSize(6.5);doc.setTextColor(13,13,13);doc.setFont('helvetica','bold');
+          doc.text(p.stats.slice(0,30),x+2,ty);ty+=4.5;
         }
-        if(p.date){doc.setFontSize(6.5);doc.setTextColor(165,163,155);doc.text(p.date,x+3,ty);ty+=4;}
-        if(p.url){doc.setFontSize(6);doc.setTextColor(26,86,219);doc.text(p.url.replace(/https?:\/\//,'').slice(0,52),x+3,ty);}
+        if(p.cap){
+          doc.setFontSize(6);doc.setTextColor(90,90,90);doc.setFont('helvetica','normal');
+          var lines=doc.splitTextToSize(p.cap,pgCellW-5);
+          doc.text(lines.slice(0,1),x+2,ty);ty+=4;
+        }
+        if(p.date){doc.setFontSize(5.5);doc.setTextColor(165,163,155);doc.text(p.date,x+2,ty);ty+=3.5;}
+        if(p.url){doc.setFontSize(5);doc.setTextColor(26,86,219);doc.text(p.url.replace(/https?:\/\//,'').slice(0,38),x+2,ty);}
       });
 
       // Footer
