@@ -547,9 +547,8 @@ function doPDF(){
       doc.addPage();
       doc.setFillColor(245,244,240);doc.rect(0,0,PW,PH,'F');
       var slice=posts.slice(pg*perPage,(pg+1)*perPage);
-      var n=slice.length;
-
-      // Layout adattivo per pagina
+      // Layout adattivo basato su TOTALE post (non solo questa pagina)
+      var n=posts.length;
       var pgCols = n===1?1 : n===2?2 : n===4?2 : 3;
       var pgRows = n<=pgCols ? 1 : 2;
       var pgCellW = (PW - mX*2 - (pgCols-1)*gap) / pgCols;
@@ -569,27 +568,22 @@ function doPDF(){
         // Immagine con proporzioni corrette
         var pi=postI[pg*perPage+idx];
         if(pi){
-          // Cover: riempi sempre la cella mantenendo proporzioni (ritaglia al centro)
           var nw=pi.naturalWidth||pi.width||1;
           var nh=pi.naturalHeight||pi.height||1;
-          var imgRatio=nw/nh;
+          var ratio=nw/nh;
           var cellRatio=pgCellW/pgImgH;
           var drawW,drawH,offX=0,offY=0;
-          if(imgRatio>cellRatio){
-            // immagine più larga della cella: altezza piena, ritaglia lateralmente
-            drawH=pgImgH; drawW=drawH*imgRatio;
-            offX=-((drawW-pgCellW)/2);
+          if(ratio>cellRatio){
+            drawW=pgCellW; drawH=drawW/ratio;
+            offY=(pgImgH-drawH)/2;
           } else {
-            // immagine più alta della cella: larghezza piena, ritaglia verticalmente (da centro)
-            drawW=pgCellW; drawH=drawW/imgRatio;
-            offY=-((drawH-pgImgH)/3); // taglia più dal basso che dall'alto
+            drawH=pgImgH; drawW=drawH*ratio;
+            offX=(pgCellW-drawW)/2;
           }
-          // Clip manuale: disegna sfondo, poi immagine fuori bounds viene nascosta dal rettangolo bianco sopra
+          // Sfondo scuro dietro immagine (integrato col design, non grigio)
+          doc.setFillColor(20,20,20);
+          doc.rect(x,y,pgCellW,pgImgH,'F');
           doc.addImage(pi,'JPEG',x+offX,y+offY,drawW,drawH,'','FAST');
-          // Ricopri sforamenti con colore bg
-          doc.setFillColor(245,244,240);
-          if(offX<0){doc.rect(0,y,x,pgImgH,'F');doc.rect(x+pgCellW,y,PW,pgImgH,'F');}
-          if(offY<0){doc.rect(x,0,pgCellW,y,'F');doc.rect(x,y+pgImgH,pgCellW,PH,'F');}
         } else {
           doc.setFillColor(238,237,231);doc.rect(x,y,pgCellW,pgImgH,'F');
           doc.setFontSize(8);doc.setTextColor(190,188,182);
