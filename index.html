@@ -189,7 +189,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <div id="sel-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
   </div>
-  <div id="totals-bar" style="display:none;background:#fff;border:2px solid #e0dfd8;border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+  <div id="totals-wrap" style="display:none;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#999;">Riepilogo statistiche</div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#555;user-select:none;">
+        <span>Includi nel PDF</span>
+        <div style="position:relative;width:40px;height:22px;" onclick="toggleTotalsInPDF()">
+          <input type="checkbox" id="include-totals" checked style="opacity:0;position:absolute;width:0;height:0;" />
+          <div id="toggle-track" style="width:40px;height:22px;background:#0d0d0d;border-radius:11px;transition:.2s;"></div>
+          <div id="toggle-thumb" style="position:absolute;top:3px;left:21px;width:16px;height:16px;background:#fff172;border-radius:50%;transition:.2s;"></div>
+        </div>
+      </label>
+    </div>
+  <div id="totals-bar" style="background:#fff;border:2px solid #e0dfd8;border-radius:10px;padding:14px 18px;">
     <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:10px;">Totali contenuti selezionati</div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
       <div style="text-align:center;background:#f0efe9;border-radius:8px;padding:10px 18px;min-width:80px;">
@@ -209,6 +221,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div style="font-size:11px;color:#999;margin-top:2px;">Salvataggi</div>
       </div>
     </div>
+  </div>
   </div>
   <div id="prevarea"><div class="no-preview">Seleziona un artista per vedere l&#39;anteprima</div></div>
 </div>
@@ -531,11 +544,20 @@ function formatNum(n){
   return n.toString();
 }
 
+function toggleTotalsInPDF(){
+  var cb=document.getElementById('include-totals');
+  cb.checked=!cb.checked;
+  var track=document.getElementById('toggle-track');
+  var thumb=document.getElementById('toggle-thumb');
+  if(cb.checked){track.style.background='#0d0d0d';thumb.style.left='21px';}
+  else{track.style.background='#ccc';thumb.style.left='3px';}
+}
+
 function updateTotals(posts){
-  var bar=document.getElementById('totals-bar');
+  var wrap=document.getElementById('totals-wrap');
   var hasStat=posts.some(function(p){return p.views||p.likes||p.comments||p.saves;});
-  if(!hasStat){bar.style.display='none';return;}
-  bar.style.display='';
+  if(!hasStat){wrap.style.display='none';return;}
+  wrap.style.display='';
   var tv=0,tl=0,tc=0,ts=0;
   posts.forEach(function(p){tv+=parseNum(p.views);tl+=parseNum(p.likes);tc+=parseNum(p.comments);ts+=parseNum(p.saves);});
   document.getElementById('tot-views').textContent=formatNum(tv);
@@ -621,7 +643,8 @@ function doPDF(){
     doc.setFontSize(9);doc.setTextColor(90,90,90);
     doc.text(posts.length+' CONTENUTI PUBBLICATI',PW-20,PH/2+23,{align:'right'});
     // Totali nella copertina se ci sono statistiche
-    var hasStats=posts.some(function(p){return p.views||p.likes||p.comments||p.saves;});
+    var includeTotals=document.getElementById('include-totals')&&document.getElementById('include-totals').checked;
+    var hasStats=includeTotals&&posts.some(function(p){return p.views||p.likes||p.comments||p.saves;});
     if(hasStats){
       var tv=0,tl=0,tc=0,ts=0;
       posts.forEach(function(p){tv+=parseNum(p.views);tl+=parseNum(p.likes);tc+=parseNum(p.comments);ts+=parseNum(p.saves);});
@@ -703,14 +726,14 @@ function doPDF(){
         ty+=7;
         if(p.views||p.likes||p.comments||p.saves){
           doc.setFontSize(5.5);doc.setFont('helvetica','bold');doc.setTextColor(13,13,13);
-          var statParts=[];
-          if(p.views)statParts.push(p.views+' views');
-          if(p.likes)statParts.push(p.likes+' likes');
-          if(p.comments)statParts.push(p.comments+' comm.');
-          if(p.saves)statParts.push(p.saves+' salv.');
-          doc.text(statParts.join('  ·  ').slice(0,45),x+2,ty);
+          var sp1=[],sp2=[];
+          if(p.views)sp1.push(p.views+' views');
+          if(p.likes)sp1.push(p.likes+' likes');
+          if(p.comments)sp2.push(p.comments+' comm.');
+          if(p.saves)sp2.push(p.saves+' salv.');
+          if(sp1.length){doc.text(sp1.join('  ·  '),x+2,ty);ty+=3.5;}
+          if(sp2.length){doc.text(sp2.join('  ·  '),x+2,ty);ty+=3.5;}
           doc.setFont('helvetica','normal');
-          ty+=4;
         }
         if(p.cap){
           doc.setFontSize(6);doc.setTextColor(90,90,90);doc.setFont('helvetica','normal');
