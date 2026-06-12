@@ -98,6 +98,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--k);color:var(--y);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.05em;padding:12px 24px;border-radius:8px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
 .toast.show{opacity:1;}
 .no-preview{text-align:center;padding:48px;color:#bbb;font-size:13px;}
+.sel-card{background:#fff;border:2.5px solid #e0dfd8;border-radius:10px;overflow:hidden;cursor:pointer;transition:.15s;position:relative;user-select:none;}
+.sel-card:hover{border-color:#bbb;}
+.sel-card.sel{border-color:#0d0d0d;box-shadow:0 0 0 1px #0d0d0d;}
+.sel-check{position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:12px;transition:.15s;z-index:2;}
+.sel-card.sel .sel-check{background:#0d0d0d;border-color:#0d0d0d;color:#fff172;}
+.sel-thumb{width:100%;height:110px;object-fit:contain;display:block;background:#eeede7;}
+.sel-ph{width:100%;height:110px;background:#eeede7;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px;text-transform:uppercase;}
+.sel-meta{padding:7px 9px;}
+.sel-plat{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:10px;text-transform:uppercase;color:#fff172;background:#0d0d0d;display:inline-block;padding:1px 7px;border-radius:3px;margin-bottom:3px;}
+.sel-date{font-size:10px;color:#aaa;}
+.sel-cap{font-size:11px;color:#666;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;}
 /* preview card */
 .prev-wrap{background:#fff;border-radius:12px;overflow:hidden;border:2px solid var(--bd);}
 .prev-cover{background:var(--k);padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
@@ -130,6 +141,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="page active" id="page-g">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
     <div class="sec-label" style="margin:0;">Artisti</div>
+    <button onclick="resetAll()" style="font-size:11px;color:#aaa;background:none;border:1px solid #ddd;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">Resetta dati</button>
   </div>
   <div class="artist-row" id="arow"></div>
   <div class="inline-form" id="iform">
@@ -158,14 +170,24 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="page" id="page-e">
   <div class="etoolbar">
     <span class="flabel">Artista</span>
-    <select id="esel" onchange="renderPrev()" style="flex:1;max-width:220px;"></select>
-    <select id="efilt" onchange="renderPrev()" style="width:auto;min-width:140px;padding:9px 12px;font-size:13px;">
+    <select id="esel" onchange="loadExportPosts()" style="flex:1;max-width:220px;"></select>
+    <select id="efilt" onchange="loadExportPosts()" style="width:auto;min-width:140px;padding:9px 12px;font-size:13px;">
       <option value="all">Tutte le piattaforme</option>
       <option value="Instagram">Solo Instagram</option>
       <option value="TikTok">Solo TikTok</option>
       <option value="YouTube">Solo YouTube</option>
     </select>
-    <button class="btn btn-y" id="pdfbtn" onclick="doPDF()" style="margin-left:auto;">Scarica PDF</button>
+    <div style="display:flex;gap:6px;margin-left:auto;">
+      <button class="btn btn-o" onclick="toggleAllSel()" id="selbtn" style="font-size:12px;padding:9px 14px;">Deseleziona tutti</button>
+      <button class="btn btn-y" id="pdfbtn" onclick="doPDF()">Scarica PDF</button>
+    </div>
+  </div>
+  <!-- Griglia selezione contenuti -->
+  <div id="sel-grid" style="display:none;margin-bottom:18px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:10px;">
+      Seleziona i contenuti da includere nel PDF — <span id="sel-count" style="color:#0d0d0d;"></span>
+    </div>
+    <div id="sel-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
   </div>
   <div id="prevarea"><div class="no-preview">Seleziona un artista per vedere l&#39;anteprima</div></div>
 </div>
@@ -355,25 +377,108 @@ function fillES(){
   s.innerHTML='<option value="">Seleziona artista...</option>';
   S.artists.forEach(function(a){var o=document.createElement('option');o.value=a;o.textContent=a;if(a===c)o.selected=true;s.appendChild(o);});
 }
+
+var selectedIdxs=[];
+
+function loadExportPosts(){
+  var a=document.getElementById('esel').value;
+  var area=document.getElementById('prevarea');
+  var grid=document.getElementById('sel-grid');
+  if(!a){
+    area.innerHTML='<div class="no-preview">Seleziona un artista per vedere l&#39;anteprima</div>';
+    grid.style.display='none';
+    return;
+  }
+  var pf=document.getElementById('efilt').value;
+  var posts=S.posts[a]||[];
+  var filtered=pf==='all'?posts:posts.filter(function(p){return p.plat===pf;});
+
+  // Init all selected
+  selectedIdxs=filtered.map(function(_,i){return i;});
+  renderSelCards(filtered);
+  renderPrev();
+}
+
+function renderSelCards(filtered){
+  var grid=document.getElementById('sel-grid');
+  var cards=document.getElementById('sel-cards');
+  if(!filtered.length){grid.style.display='none';return;}
+  grid.style.display='';
+  updateSelCount(filtered.length, filtered.length);
+  cards.innerHTML='';
+  filtered.forEach(function(p,i){
+    var card=document.createElement('div');
+    card.className='sel-card sel';
+    card.dataset.idx=i;
+    card.innerHTML='<div class="sel-check">✓</div>'
+      +(p.img?'<img class="sel-thumb" src="'+p.img+'" />':'<div class="sel-ph">'+p.plat+'</div>')
+      +'<div class="sel-meta">'
+      +'<div class="sel-plat">'+p.plat+'</div>'
+      +(p.date?'<div class="sel-date">'+p.date+'</div>':'')
+      +(p.cap?'<div class="sel-cap">'+p.cap+'</div>':'')
+      +'</div>';
+    card.onclick=function(){toggleSel(i,card,filtered.length);};
+    cards.appendChild(card);
+  });
+  document.getElementById('selbtn').textContent='Deseleziona tutti';
+}
+
+function toggleSel(i,card,total){
+  var idx=selectedIdxs.indexOf(i);
+  if(idx>=0){selectedIdxs.splice(idx,1);card.classList.remove('sel');}
+  else{selectedIdxs.push(i);card.classList.add('sel');}
+  selectedIdxs.sort(function(a,b){return a-b;});
+  updateSelCount(selectedIdxs.length, total);
+  renderPrev();
+}
+
+function updateSelCount(sel,total){
+  document.getElementById('sel-count').textContent=sel+' di '+total+' selezionati';
+}
+
+function toggleAllSel(){
+  var a=document.getElementById('esel').value;if(!a)return;
+  var pf=document.getElementById('efilt').value;
+  var posts=S.posts[a]||[];
+  var filtered=pf==='all'?posts:posts.filter(function(p){return p.plat===pf;});
+  var cards=document.querySelectorAll('.sel-card');
+  if(selectedIdxs.length===filtered.length){
+    // deselect all
+    selectedIdxs=[];
+    cards.forEach(function(c){c.classList.remove('sel');});
+    document.getElementById('selbtn').textContent='Seleziona tutti';
+  } else {
+    // select all
+    selectedIdxs=filtered.map(function(_,i){return i;});
+    cards.forEach(function(c){c.classList.add('sel');});
+    document.getElementById('selbtn').textContent='Deseleziona tutti';
+  }
+  updateSelCount(selectedIdxs.length, filtered.length);
+  renderPrev();
+}
+
 function getEP(){
   var a=document.getElementById('esel').value;if(!a)return[];
-  var pf=document.getElementById('efilt').value,pp=S.posts[a]||[];
-  return pf==='all'?pp:pp.filter(function(p){return p.plat===pf;});
+  var pf=document.getElementById('efilt').value;
+  var posts=S.posts[a]||[];
+  var filtered=pf==='all'?posts:posts.filter(function(p){return p.plat===pf;});
+  return selectedIdxs.map(function(i){return filtered[i];}).filter(Boolean);
 }
+
 function renderPrev(){
   var a=document.getElementById('esel').value;
   var area=document.getElementById('prevarea');
   if(!a){area.innerHTML='<div class="no-preview">Seleziona un artista per vedere l&#39;anteprima</div>';return;}
   var posts=getEP();
   var today=new Date().toLocaleDateString('it-IT',{year:'numeric',month:'long',day:'numeric'});
-  var cols=posts.length===1?1:posts.length===2?2:3;
+  var cols=posts.length===0?1:posts.length===1?1:posts.length===2?2:3;
   var items=posts.map(function(p){
     return '<div class="prev-item">'
       +(p.img
-        ?'<div style="width:100%;background:#eeede7;display:flex;align-items:center;justify-content:center;overflow:hidden;height:200px;">'
-          +'<img src="'+p.img+'" style="max-width:100%;max-height:200px;width:auto;height:auto;display:block;object-fit:contain;" />'
+        ?'<div style="width:100%;background:#eeede7;display:flex;align-items:center;justify-content:center;overflow:hidden;height:180px;">'
+          +'<img src="'+p.img+'" style="max-width:100%;max-height:180px;width:auto;height:auto;display:block;" />'
           +'</div>'
-        :'<div class="prev-ph">'+p.plat+'</div>')
+        :'<div class="prev-ph" style="height:180px;">'+p.plat+'</div>')
       +'<div class="prev-meta">'
       +'<div class="prev-badge">'+p.plat+'</div>'
       +(p.cap?'<div class="prev-cap">'+p.cap+'</div>':'')
@@ -385,10 +490,13 @@ function renderPrev(){
     +'<div class="prev-cover"><img class="prev-logo" src="'+LOGO+'" />'
     +'<div><div class="prev-artist">'+a.toUpperCase()+'</div>'
     +'<div class="prev-sub">Rassegna &middot; '+today+'</div>'
-    +'<div class="prev-cnt">'+posts.length+' contenuti</div></div></div>'
-    +(posts.length?'<div class="prev-grid" style="grid-template-columns:repeat('+cols+',1fr);">'+items+'</div>':'<div style="padding:40px;text-align:center;color:#ccc;">Nessun contenuto.</div>')
+    +'<div class="prev-cnt">'+posts.length+' contenuti selezionati</div></div></div>'
+    +(posts.length
+      ?'<div class="prev-grid" style="grid-template-columns:repeat('+cols+',1fr);">'+items+'</div>'
+      :'<div style="padding:30px;text-align:center;color:#ccc;font-size:13px;">Nessun contenuto selezionato.</div>')
     +'<div class="prev-footer"><div class="prev-footer-txt">esse&deg; Magazine</div><div class="prev-footer-txt">'+today+'</div></div></div>';
 }
+
 function loadImg(src){
   return new Promise(function(resolve){
     if(!src){resolve(null);return;}
@@ -397,6 +505,7 @@ function loadImg(src){
     img.src=src;
   });
 }
+
 function doPDF(){
   var a=document.getElementById('esel').value;
   if(!a){alert('Seleziona un artista');return;}
@@ -520,6 +629,16 @@ function doPDF(){
     alert('Errore: '+e.message);
   });
 }
+
+function resetAll(){
+  if(!confirm('Cancellare tutti gli artisti e contenuti? Questa azione non si puo annullare.'))return;
+  localStorage.clear();
+  S={artists:[],posts:{},sel:null};
+  document.getElementById('psec').style.display='none';
+  renderA();
+  toast('Dati cancellati.');
+}
+
 ld();renderA();
 if(S.sel&&S.artists.indexOf(S.sel)>=0){
   document.getElementById('psec').style.display='';
