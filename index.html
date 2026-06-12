@@ -654,47 +654,62 @@ function doPDF(){
     doc.rect(0,0,PW,PH,'F');
     var CX=PW/2;
 
-    // LOGO esse° — centrato, y=8
-    if(logoI){
-      var lw=40,lh=Math.round(lw*(logoI.naturalHeight/logoI.naturalWidth));
-      doc.addImage(logoI,'PNG',CX-lw/2,8,lw,lh,'','FAST');
-    }
-
-    // MASCOTTE — centrata, y=30, width=55
-    if(mascotI){
-      var mw=55,mh=Math.round(mw*(mascotI.naturalHeight/mascotI.naturalWidth));
-      doc.addImage(mascotI,'PNG',CX-mw/2,30,mw,mh,'','FAST');
-    }
-
-    // NOME ARTISTA — giallo, 50pt, y=99
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(50);
-    doc.setTextColor(255,241,114);
-    doc.text(a.toUpperCase(),CX,99,{align:'center'});
-
-    // SUBTITLE — "RASSEGNA CONTENUTI - 12 GIUGNO 2026"
-    // Tutto in una riga, 9pt, no charspace, centrato
-    doc.setFontSize(9);
-    doc.setCharSpace(0);
-    var subTxt='RASSEGNA CONTENUTI - '+today.toUpperCase();
-    // parte normale
-    doc.setFont('helvetica','normal');
-    doc.setTextColor(110,103,82);
-    // parte bold (data) - rendiamo tutto bold con colore leggermente diverso
-    // jsPDF non supporta mix inline, usiamo bold per tutta la riga
-    doc.setFont('helvetica','bold');
-    doc.setTextColor(120,112,88);
-    doc.text(subTxt,CX,111,{align:'center'});
-
-    // CONTENUTI COUNT — 10pt bold, y=121, no charspace
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(10);
-    doc.setTextColor(180,170,140);
-    doc.text(posts.length+' CONTENUTI PUBBLICATI',CX,121,{align:'center'});
-
-    // STATS BLOCKS — y=155, h=38, numeri grandi
+    // Calcola altezza totale del blocco centrale per centrarlo
     var includeTotals=document.getElementById('include-totals')&&document.getElementById('include-totals').checked;
     var hasStats=includeTotals&&posts.some(function(p){return p.views||p.likes||p.comments||p.saves;});
+
+    // Misure fisse elementi
+    var logoH=20, mascotH=60, nameFS=50, subFS=9, cntFS=10;
+    var logoMascotGap=1, mascotNameGap=2, nameSubGap=9, subCntGap=7;
+    var statsH=hasStats?38:0, textStatsGap=hasStats?22:0;
+
+    // Altezza totale blocco
+    var totalH = logoH + logoMascotGap + mascotH + mascotNameGap
+               + nameFS*0.4 + nameSubGap + subFS*0.4 + subCntGap
+               + cntFS*0.4 + textStatsGap + statsH;
+
+    // Y iniziale per centrare verticalmente con leggero offset verso il basso
+    var startY = (PH - totalH)/2 - 5;
+    var cy = startY;
+
+    // LOGO
+    if(logoI){
+      var lw=42,lh=Math.round(lw*(logoI.naturalHeight/logoI.naturalWidth));
+      doc.addImage(logoI,'PNG',CX-lw/2,cy,lw,lh,'','FAST');
+    }
+    cy += logoH + logoMascotGap;
+
+    // MASCOTTE
+    if(mascotI){
+      var mw=52,mh=Math.round(mw*(mascotI.naturalHeight/mascotI.naturalWidth));
+      doc.addImage(mascotI,'PNG',CX-mw/2,cy,mw,mh,'','FAST');
+    }
+    cy += mascotH + mascotNameGap;
+
+    // NOME ARTISTA
+    cy += nameFS*0.38;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(nameFS);
+    doc.setTextColor(255,241,114);
+    doc.text(a.toUpperCase(),CX,cy,{align:'center'});
+    cy += nameSubGap;
+
+    // SUBTITLE — 9pt, no charspace
+    cy += subFS*0.38;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(subFS);
+    doc.setTextColor(115,107,85);
+    doc.text('RASSEGNA CONTENUTI - '+today.toUpperCase(),CX,cy,{align:'center'});
+    cy += subCntGap;
+
+    // CONTENUTI COUNT — 10pt bold
+    cy += cntFS*0.38;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(cntFS);
+    doc.setTextColor(175,165,135);
+    doc.text(posts.length+' CONTENUTI PUBBLICATI',CX,cy,{align:'center'});
+
+    // STATS BLOCKS
     if(hasStats){
       var tv=0,tl=0,tc=0,ts=0;
       posts.forEach(function(p){
@@ -706,18 +721,17 @@ function doPDF(){
         {label:'COMMENTI',val:tc},{label:'SALVATAGGI',val:ts}
       ].filter(function(b){return b.val>0;});
       var sn=sblocks.length;
-      var smarg=14,sgap=7,sbh=38,sby=155;
+      var sby=cy+textStatsGap;
+      var smarg=14,sgap=7,sbh=38;
       var sbw=(PW-smarg*2-sgap*(sn-1))/sn;
       var sbx=smarg;
       sblocks.forEach(function(b){
         doc.setFillColor(255,241,114);
         doc.roundedRect(sbx,sby,sbw,sbh,5,5,'F');
-        // Numero — molto grande come nel template
         doc.setFont('helvetica','bold');
         doc.setFontSize(26);
         doc.setTextColor(20,17,12);
         doc.text(formatNum(b.val),sbx+sbw/2,sby+16,{align:'center'});
-        // Label — piccola, uppercase, sotto
         doc.setFont('helvetica','normal');
         doc.setFontSize(7.5);
         doc.setTextColor(50,42,18);
