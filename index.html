@@ -654,46 +654,45 @@ function doPDF(){
     doc.rect(0,0,PW,PH,'F');
     var CX=PW/2;
 
-    // LOGO esse° — piccolo, centrato in alto
+    // LOGO esse° — centrato, y=8
     if(logoI){
-      var lw=38,lh=Math.round(lw*(logoI.naturalHeight/logoI.naturalWidth));
+      var lw=40,lh=Math.round(lw*(logoI.naturalHeight/logoI.naturalWidth));
       doc.addImage(logoI,'PNG',CX-lw/2,8,lw,lh,'','FAST');
     }
 
-    // MASCOTTE — centrata, non troppo grande
+    // MASCOTTE — centrata, y=30, width=55
     if(mascotI){
-      var mw=58,mh=Math.round(mw*(mascotI.naturalHeight/mascotI.naturalWidth));
+      var mw=55,mh=Math.round(mw*(mascotI.naturalHeight/mascotI.naturalWidth));
       doc.addImage(mascotI,'PNG',CX-mw/2,30,mw,mh,'','FAST');
     }
 
-    // NOME ARTISTA — giallo, grande, y=104
+    // NOME ARTISTA — giallo, 50pt, y=99
     doc.setFont('helvetica','bold');
-    doc.setFontSize(48);
+    doc.setFontSize(50);
     doc.setTextColor(255,241,114);
-    doc.text(a.toUpperCase(),CX,104,{align:'center'});
+    doc.text(a.toUpperCase(),CX,99,{align:'center'});
 
-    // SUBTITLE — una riga sola, semplice
-    // "RASSEGNA CONTENUTI - 12 GIUGNO 2026"
-    doc.setFontSize(8);
-    doc.setFont('helvetica','normal');
-    doc.setTextColor(115,107,85);
-    doc.setCharSpace(1.0);
-    var subLeft='RASSEGNA CONTENUTI - ';
-    var subRight=today.toUpperCase();
-    // Calcola posizione manuale senza getTextWidth
-    // Usa testo completo centrato, poi sovrascrive parte destra in bold
-    doc.text(subLeft+subRight, CX, 116, {align:'center'});
-    doc.setCharSpace(0);
-
-    // CONTENUTI COUNT — bold, y=124
-    doc.setFont('helvetica','bold');
+    // SUBTITLE — "RASSEGNA CONTENUTI - 12 GIUGNO 2026"
+    // Tutto in una riga, 9pt, no charspace, centrato
     doc.setFontSize(9);
-    doc.setTextColor(175,165,135);
-    doc.setCharSpace(1.3);
-    doc.text(posts.length+' CONTENUTI PUBBLICATI', CX, 124, {align:'center'});
     doc.setCharSpace(0);
+    var subTxt='RASSEGNA CONTENUTI - '+today.toUpperCase();
+    // parte normale
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(110,103,82);
+    // parte bold (data) - rendiamo tutto bold con colore leggermente diverso
+    // jsPDF non supporta mix inline, usiamo bold per tutta la riga
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(120,112,88);
+    doc.text(subTxt,CX,111,{align:'center'});
 
-    // STATS BLOCKS — y=162, altezza 34mm, larghezza piena con margini
+    // CONTENUTI COUNT — 10pt bold, y=121, no charspace
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(180,170,140);
+    doc.text(posts.length+' CONTENUTI PUBBLICATI',CX,121,{align:'center'});
+
+    // STATS BLOCKS — y=155, h=38, numeri grandi
     var includeTotals=document.getElementById('include-totals')&&document.getElementById('include-totals').checked;
     var hasStats=includeTotals&&posts.some(function(p){return p.views||p.likes||p.comments||p.saves;});
     if(hasStats){
@@ -707,22 +706,22 @@ function doPDF(){
         {label:'COMMENTI',val:tc},{label:'SALVATAGGI',val:ts}
       ].filter(function(b){return b.val>0;});
       var sn=sblocks.length;
-      var smarg=14,sgap=7,sbh=34,sby=162;
+      var smarg=14,sgap=7,sbh=38,sby=155;
       var sbw=(PW-smarg*2-sgap*(sn-1))/sn;
       var sbx=smarg;
       sblocks.forEach(function(b){
         doc.setFillColor(255,241,114);
         doc.roundedRect(sbx,sby,sbw,sbh,5,5,'F');
+        // Numero — molto grande come nel template
         doc.setFont('helvetica','bold');
-        doc.setFontSize(22);
+        doc.setFontSize(26);
         doc.setTextColor(20,17,12);
-        doc.text(formatNum(b.val),sbx+sbw/2,sby+14,{align:'center'});
+        doc.text(formatNum(b.val),sbx+sbw/2,sby+16,{align:'center'});
+        // Label — piccola, uppercase, sotto
         doc.setFont('helvetica','normal');
-        doc.setFontSize(7);
-        doc.setTextColor(55,45,22);
-        doc.setCharSpace(0.5);
-        doc.text(b.label,sbx+sbw/2,sby+26,{align:'center'});
-        doc.setCharSpace(0);
+        doc.setFontSize(7.5);
+        doc.setTextColor(50,42,18);
+        doc.text(b.label,sbx+sbw/2,sby+30,{align:'center'});
         sbx+=sbw+sgap;
       });
     }
