@@ -128,7 +128,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <div class="page active" id="page-g">
-  <div class="sec-label">Artisti</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="sec-label" style="margin:0;">Artisti</div>
+  </div>
   <div class="artist-row" id="arow"></div>
   <div class="inline-form" id="iform">
     <input type="text" id="ainput" placeholder="Nome artista..." style="flex:1;min-width:160px;" onkeydown="if(event.key==='Enter')addA()" />
@@ -323,14 +325,15 @@ function handleImg(inp){
     var img=new Image();
     img.onload=function(){
       var canvas=document.createElement('canvas');
-      var maxW=1200,maxH=1200;
+      var maxW=900,maxH=900;
       var w=img.width,h=img.height;
       if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
       if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
-      PI=canvas.toDataURL('image/jpeg',0.82);
-      document.getElementById('flbl').textContent='✓ caricata ('+Math.round(PI.length/1024)+'KB)';
+      PI=canvas.toDataURL('image/jpeg',0.75);
+      var kb=Math.round(PI.length/1024);
+      document.getElementById('flbl').textContent='✓ caricata ('+kb+'KB)';
       document.getElementById('iprevimg').src=PI;
       document.getElementById('iprev').style.display='';
     };
@@ -424,27 +427,22 @@ function doPDF(){
     doc.setFontSize(8);doc.setTextColor(70,70,70);
     doc.text('esse\u00b0 Magazine \u2014 Rassegna Stampa Digitale',20,PH-10);
     doc.text(today,PW-20,PH-10,{align:'right'});
-    /* PAGINE CONTENUTO - layout adattivo per proporzioni corrette */
-    // Calcola colonne e righe in base al numero di post
-    var COLS = posts.length <= 2 ? posts.length : 3;
-    var ROWS = posts.length <= 3 ? 1 : 2;
-    var perPage = COLS * ROWS;
+    /* PAGINE CONTENUTO - layout adattivo */
+    var perPage = 6;
     var pages = Math.ceil(posts.length / perPage);
-    var mX=10, mY=10, gap=5;
-    var cellW = (PW - mX*2 - (COLS-1)*gap) / COLS;
-    var usableH = PH - mY*2 - 8; // 8 per footer
-    var cellH = (usableH - (ROWS-1)*gap) / ROWS;
-    var metaH = 36; // spazio testo sotto immagine
-    var imgH = cellH - metaH;
+    var mX=10, mY=10, gap=6;
+    var usableH = PH - mY*2 - 8;
+    var metaH = 38;
 
     for(var pg=0;pg<pages;pg++){
       doc.addPage();
       doc.setFillColor(245,244,240);doc.rect(0,0,PW,PH,'F');
       var slice=posts.slice(pg*perPage,(pg+1)*perPage);
+      var n=slice.length;
 
-      // Ricalcola colonne per questa pagina specifica
-      var pgCols = slice.length <= 2 ? slice.length : 3;
-      var pgRows = slice.length <= 3 ? 1 : 2;
+      // Layout adattivo per pagina
+      var pgCols = n===1?1 : n===2?2 : n===4?2 : 3;
+      var pgRows = n<=pgCols ? 1 : 2;
       var pgCellW = (PW - mX*2 - (pgCols-1)*gap) / pgCols;
       var pgCellH = (usableH - (pgRows-1)*gap) / pgRows;
       var pgImgH = pgCellH - metaH;
@@ -529,5 +527,8 @@ if(S.sel&&S.artists.indexOf(S.sel)>=0){
   renderP();
 }
 </script>
+<div style="text-align:center;padding:20px 0 8px;font-size:11px;color:#bbb;">
+  <a href="#" onclick="if(confirm('Cancellare tutti i dati? Questa azione non si puo annullare.')){{localStorage.clear();location.reload();}}" style="color:#ccc;text-decoration:none;">Resetta tutti i dati</a>
+</div>
 </body>
 </html>
