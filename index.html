@@ -669,21 +669,21 @@ function doPDF(){
     ctx.fillRect(0,0,CW,CH);
 
     // Logo
-    var logoY=66,logoW=241;
+    var logoY=83,logoW=242;
     var logoH=logoI?Math.round(logoW*(logoI.naturalHeight/logoI.naturalWidth)):20;
     if(logoI)ctx.drawImage(logoI,CCX-logoW/2,logoY,logoW,logoH);
 
     // Mascotte
-    var mascY=logoY+logoH+8;
-    var mascW=217;
+    var mascY=228;
+    var mascW=240;
     var mascH=mascotI?Math.round(mascW*(mascotI.naturalHeight/mascotI.naturalWidth)):280;
     if(mascotI)ctx.drawImage(mascotI,CCX-mascW/2,mascY,mascW,mascH);
 
-    var nameY=mascY+mascH+22;
+    var nameY=653;
 
     function drawText(){
       // Nome artista - grande
-      ctx.font='900 132px "MarcinAntique","Barlow Condensed","Arial Black",sans-serif';
+      ctx.font='900 128px "MarcinAntique","Barlow Condensed","Arial Black",sans-serif';
       ctx.fillStyle='#fff172';
       ctx.textAlign='center';
       ctx.fillText(a.toUpperCase(),CCX,nameY);
@@ -691,16 +691,16 @@ function doPDF(){
       // Subtitle
       ctx.font='500 29px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#6e6650';
-      ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+48);
+      ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,750);
 
       // Count
       ctx.font='700 31px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#b4aa82';
-      ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+48+36);
+      ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,796);
 
       // Stats
       if(sblocks.length>0){
-        var sby=nameY+48+36+55; var smarg=66,sgap=28,sbh=169;
+        var sby=889; var smarg=66,sgap=28,sbh=212;
         var sbw=(CW-smarg*2-sgap*(sblocks.length-1))/sblocks.length;
         var sbx=smarg;
         sblocks.forEach(function(b){
@@ -711,7 +711,7 @@ function doPDF(){
           ctx.lineTo(sbx+r,sby+sbh);ctx.quadraticCurveTo(sbx,sby+sbh,sbx,sby+sbh-r);
           ctx.lineTo(sbx,sby+r);ctx.quadraticCurveTo(sbx,sby,sbx+r,sby);
           ctx.closePath();ctx.fill();
-          ctx.font='800 108px "MarcinAntique","Barlow Condensed","Arial Black",sans-serif';
+          ctx.font='800 112px "MarcinAntique","Barlow Condensed","Arial Black",sans-serif';
           ctx.fillStyle='#141208';ctx.textAlign='center';
           ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+sbh*0.56);
           ctx.font='500 34px "Barlow Condensed",Arial,sans-serif';
