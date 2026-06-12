@@ -366,7 +366,11 @@ function renderPrev(){
   var cols=posts.length===1?1:posts.length===2?2:3;
   var items=posts.map(function(p){
     return '<div class="prev-item">'
-      +(p.img?'<img class="prev-img" src="'+p.img+'" />':'<div class="prev-ph">'+p.plat+'</div>')
+      +(p.img
+        ?'<div style="width:100%;background:#eeede7;display:flex;align-items:center;justify-content:center;overflow:hidden;height:200px;">'
+          +'<img src="'+p.img+'" style="max-width:100%;max-height:200px;width:auto;height:auto;display:block;object-fit:contain;" />'
+          +'</div>'
+        :'<div class="prev-ph">'+p.plat+'</div>')
       +'<div class="prev-meta">'
       +'<div class="prev-badge">'+p.plat+'</div>'
       +(p.cap?'<div class="prev-cap">'+p.cap+'</div>':'')
@@ -420,61 +424,89 @@ function doPDF(){
     doc.setFontSize(8);doc.setTextColor(70,70,70);
     doc.text('esse\u00b0 Magazine \u2014 Rassegna Stampa Digitale',20,PH-10);
     doc.text(today,PW-20,PH-10,{align:'right'});
-    /* PAGINE CONTENUTO */
-    var COLS=3,perPage=6,pages=Math.ceil(posts.length/perPage);
-    var mX=10,gap=5;
-    var cellW=(PW-mX*2-(COLS-1)*gap)/COLS;
-    var imgH=92,metaH=44,cellH=imgH+metaH;
-    var totalH=2*cellH+gap;
-    var startY=(PH-totalH)/2;
+    /* PAGINE CONTENUTO - layout adattivo per proporzioni corrette */
+    // Calcola colonne e righe in base al numero di post
+    var COLS = posts.length <= 2 ? posts.length : 3;
+    var ROWS = posts.length <= 3 ? 1 : 2;
+    var perPage = COLS * ROWS;
+    var pages = Math.ceil(posts.length / perPage);
+    var mX=10, mY=10, gap=5;
+    var cellW = (PW - mX*2 - (COLS-1)*gap) / COLS;
+    var usableH = PH - mY*2 - 8; // 8 per footer
+    var cellH = (usableH - (ROWS-1)*gap) / ROWS;
+    var metaH = 36; // spazio testo sotto immagine
+    var imgH = cellH - metaH;
+
     for(var pg=0;pg<pages;pg++){
       doc.addPage();
       doc.setFillColor(245,244,240);doc.rect(0,0,PW,PH,'F');
       var slice=posts.slice(pg*perPage,(pg+1)*perPage);
+
+      // Ricalcola colonne per questa pagina specifica
+      var pgCols = slice.length <= 2 ? slice.length : 3;
+      var pgRows = slice.length <= 3 ? 1 : 2;
+      var pgCellW = (PW - mX*2 - (pgCols-1)*gap) / pgCols;
+      var pgCellH = (usableH - (pgRows-1)*gap) / pgRows;
+      var pgImgH = pgCellH - metaH;
+
       slice.forEach(function(p,idx){
-        var col=idx%COLS,row=Math.floor(idx/COLS);
-        var x=mX+col*(cellW+gap),y=startY+row*(cellH+gap);
-        doc.setFillColor(255,255,255);doc.setDrawColor(225,224,218);doc.setLineWidth(0.3);
-        doc.roundedRect(x,y,cellW,cellH,2,2,'FD');
+        var col=idx%pgCols, row=Math.floor(idx/pgCols);
+        var x=mX+col*(pgCellW+gap);
+        var y=mY+row*(pgCellH+gap);
+
+        // Card
+        doc.setFillColor(255,255,255);
+        doc.setDrawColor(225,224,218);doc.setLineWidth(0.3);
+        doc.roundedRect(x,y,pgCellW,pgCellH,2,2,'FD');
+
+        // Immagine con proporzioni corrette
         var pi=postI[pg*perPage+idx];
         if(pi){
-          // Mantieni proporzioni originali dell'immagine (portrait/landscape)
-          var nw=pi.naturalWidth||pi.width||1,nh=pi.naturalHeight||pi.height||1;
+          var nw=pi.naturalWidth||pi.width||1;
+          var nh=pi.naturalHeight||pi.height||1;
           var ratio=nw/nh;
           var drawW,drawH,offX=0,offY=0;
-          if(ratio>=1){
-            // landscape o quadrata: larghezza piena
-            drawW=cellW;drawH=drawW/ratio;
-            offY=(imgH-drawH)/2;
+          if(ratio >= 1){
+            // landscape: larghezza piena, centra verticalmente
+            drawW=pgCellW; drawH=drawW/ratio;
+            if(drawH>pgImgH){drawH=pgImgH;drawW=drawH*ratio;offX=(pgCellW-drawW)/2;}
+            else{offY=(pgImgH-drawH)/2;}
           } else {
-            // portrait: adatta all'altezza
-            drawH=imgH;drawW=drawH*ratio;
-            offX=(cellW-drawW)/2;
+            // portrait: altezza piena, centra orizzontalmente
+            drawH=pgImgH; drawW=drawH*ratio;
+            if(drawW>pgCellW){drawW=pgCellW;drawH=drawW/ratio;offY=(pgImgH-drawH)/2;}
+            else{offX=(pgCellW-drawW)/2;}
           }
-          // Sfondo grigio chiaro per spazi laterali
-          doc.setFillColor(240,239,235);
-          doc.rect(x,y,cellW,imgH,'F');
+          doc.setFillColor(238,237,232);
+          doc.rect(x,y,pgCellW,pgImgH,'F');
           doc.addImage(pi,'JPEG',x+offX,y+offY,drawW,drawH,'','FAST');
         } else {
-          doc.setFillColor(238,237,231);doc.rect(x,y,cellW,imgH,'F');
+          doc.setFillColor(238,237,231);doc.rect(x,y,pgCellW,pgImgH,'F');
           doc.setFontSize(8);doc.setTextColor(190,188,182);
-          doc.text(p.plat.toUpperCase(),x+cellW/2,y+imgH/2+2,{align:'center'});
+          doc.text(p.plat.toUpperCase(),x+pgCellW/2,y+pgImgH/2+2,{align:'center'});
         }
+
+        // Separatore
         doc.setDrawColor(235,234,228);doc.setLineWidth(0.2);
-        doc.line(x,y+imgH,x+cellW,y+imgH);
-        var ty=y+imgH+6;
-        doc.setFillColor(13,13,13);doc.roundedRect(x+3,ty,26,5.5,1,1,'F');
+        doc.line(x,y+pgImgH,x+pgCellW,y+pgImgH);
+
+        // Testo
+        var ty=y+pgImgH+5;
+        doc.setFillColor(13,13,13);
+        doc.roundedRect(x+3,ty,26,5.5,1,1,'F');
         doc.setFontSize(6.5);doc.setTextColor(255,241,114);doc.setFont('helvetica','bold');
         doc.text(p.plat.toUpperCase(),x+16,ty+3.8,{align:'center'});
-        ty+=9;
+        ty+=8;
         if(p.cap){
           doc.setFontSize(7.5);doc.setTextColor(75,75,75);doc.setFont('helvetica','normal');
-          var lines=doc.splitTextToSize(p.cap,cellW-7);
-          doc.text(lines.slice(0,2),x+3,ty);ty+=lines.slice(0,2).length*4+3;
+          var lines=doc.splitTextToSize(p.cap,pgCellW-7);
+          doc.text(lines.slice(0,2),x+3,ty);ty+=lines.slice(0,2).length*4+2;
         }
-        if(p.date){doc.setFontSize(6.5);doc.setTextColor(165,163,155);doc.text(p.date,x+3,ty);ty+=5;}
-        if(p.url){doc.setFontSize(6);doc.setTextColor(26,86,219);doc.text(p.url.replace(/https?:\/\//,'').slice(0,46),x+3,ty);}
+        if(p.date){doc.setFontSize(6.5);doc.setTextColor(165,163,155);doc.text(p.date,x+3,ty);ty+=4;}
+        if(p.url){doc.setFontSize(6);doc.setTextColor(26,86,219);doc.text(p.url.replace(/https?:\/\//,'').slice(0,52),x+3,ty);}
       });
+
+      // Footer
       doc.setFillColor(13,13,13);doc.rect(0,PH-8,PW,8,'F');
       doc.setFillColor(255,241,114);doc.rect(0,PH-8,PW,0.8,'F');
       doc.setFontSize(7);doc.setTextColor(110,110,110);doc.setFont('helvetica','normal');
