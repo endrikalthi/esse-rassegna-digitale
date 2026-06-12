@@ -657,92 +657,67 @@ function doPDF(){
     var includeTotals=document.getElementById('include-totals')&&document.getElementById('include-totals').checked;
     var hasStats=includeTotals&&posts.some(function(p){return p.views||p.likes||p.comments||p.saves;});
 
-    // Posizioni fisse calibrate sul template
-    // Logo
-    var LOGO_W=44, LOGO_Y=12;
-    var LOGO_H=logoI?Math.round(LOGO_W*(logoI.naturalHeight/logoI.naturalWidth)):20;
+    // Offset verticale: con stats tutto va un po' più in alto
+    var vOff = hasStats ? 0 : 8;
 
-    // Mascotte — appoggiata al logo, gap minimo
-    var MASC_W=50, MASC_Y=LOGO_Y+LOGO_H+1;
-    var MASC_H=mascotI?Math.round(MASC_W*(mascotI.naturalHeight/mascotI.naturalWidth)):55;
-
-    // Testi
-    var NAME_Y=MASC_Y+MASC_H+6;
-    var NAME_FS=50;
-    var SUB_Y=NAME_Y+NAME_FS*0.38+8;
-    var CNT_Y=SUB_Y+5;
-
-    // Se non ci sono stats, centra verticalmente il blocco
-    var blockH=CNT_Y+10;
-    var statsH=hasStats?38:0;
-    var statsGap=hasStats?18:0;
-    var totalH=blockH+statsGap+statsH;
-    var offsetY=(PH-totalH)/2-8; // -8 = leggermente sopra centro come nel template
-
-    if(offsetY<5)offsetY=5;
-
-    // Ridisegna con offset
-    var ly=LOGO_Y+offsetY;
-    var my=MASC_Y+offsetY;
-    var ny=NAME_Y+offsetY;
-    var sy=SUB_Y+offsetY;
-    var cy2=CNT_Y+offsetY;
-    var staty=cy2+statsGap;
-
-    // LOGO
+    // LOGO esse° — y=14mm
     if(logoI){
-      doc.addImage(logoI,'PNG',CX-LOGO_W/2,ly,LOGO_W,LOGO_H,'','FAST');
+      var lw=42, lh=Math.round(lw*(logoI.naturalHeight/logoI.naturalWidth));
+      doc.addImage(logoI,'PNG', CX-lw/2, 14+vOff, lw, lh, '', 'FAST');
     }
 
-    // MASCOTTE
+    // MASCOTTE — y=38mm, h=65mm → bottom=103mm
     if(mascotI){
-      doc.addImage(mascotI,'PNG',CX-MASC_W/2,my,MASC_W,MASC_H,'','FAST');
+      var mw=52, mh=Math.round(mw*(mascotI.naturalHeight/mascotI.naturalWidth));
+      doc.addImage(mascotI,'PNG', CX-mw/2, 38+vOff, mw, mh, '', 'FAST');
     }
 
-    // NOME ARTISTA — 50pt giallo
+    // NOME ARTISTA — y=112mm (sotto mascotte), 42pt bold
     doc.setFont('helvetica','bold');
-    doc.setFontSize(NAME_FS);
+    doc.setFontSize(42);
     doc.setTextColor(255,241,114);
-    doc.text(a.toUpperCase(),CX,ny,{align:'center'});
+    doc.text(a.toUpperCase(), CX, 112+vOff, {align:'center'});
 
-    // SUBTITLE — 8pt, normal weight, colore più spento
+    // SUBTITLE — y=120mm, 8pt normal
     doc.setFont('helvetica','normal');
     doc.setFontSize(8);
     doc.setTextColor(108,100,78);
-    doc.text('RASSEGNA CONTENUTI - '+today.toUpperCase(),CX,sy,{align:'center'});
+    doc.text('RASSEGNA CONTENUTI - '+today.toUpperCase(), CX, 120+vOff, {align:'center'});
 
-    // COUNT — 9pt bold, più luminoso, gap ridotto (solo 5mm dal sub)
+    // COUNT — y=126mm, 9pt bold, più vicino alla subtitle
     doc.setFont('helvetica','bold');
     doc.setFontSize(9);
-    doc.setTextColor(185,178,148);
-    doc.text(posts.length+' CONTENUTI PUBBLICATI',CX,sy+5,{align:'center'});
+    doc.setTextColor(180,172,142);
+    doc.text(posts.length+' CONTENUTI PUBBLICATI', CX, 126+vOff, {align:'center'});
 
-    // STATS
+    // STATS — y=150mm, h=36mm
     if(hasStats){
       var tv=0,tl=0,tc=0,ts=0;
       posts.forEach(function(p){
-        tv+=parseNum(p.views);tl+=parseNum(p.likes);
-        tc+=parseNum(p.comments);ts+=parseNum(p.saves);
+        tv+=parseNum(p.views); tl+=parseNum(p.likes);
+        tc+=parseNum(p.comments); ts+=parseNum(p.saves);
       });
       var sblocks=[
         {label:'VIEWS',val:tv},{label:'LIKES',val:tl},
         {label:'COMMENTI',val:tc},{label:'SALVATAGGI',val:ts}
       ].filter(function(b){return b.val>0;});
       var sn=sblocks.length;
-      var smarg=14,sgap=7,sbh=statsH;
+      var smarg=14, sgap=7, sbh=36, sby=150;
       var sbw=(PW-smarg*2-sgap*(sn-1))/sn;
       var sbx=smarg;
       sblocks.forEach(function(b){
         doc.setFillColor(255,241,114);
-        doc.roundedRect(sbx,staty,sbw,sbh,5,5,'F');
+        doc.roundedRect(sbx, sby, sbw, sbh, 5, 5, 'F');
+        // Numero grande
         doc.setFont('helvetica','bold');
-        doc.setFontSize(26);
+        doc.setFontSize(24);
         doc.setTextColor(20,17,12);
-        doc.text(formatNum(b.val),sbx+sbw/2,staty+16,{align:'center'});
+        doc.text(formatNum(b.val), sbx+sbw/2, sby+15, {align:'center'});
+        // Label
         doc.setFont('helvetica','normal');
-        doc.setFontSize(7.5);
+        doc.setFontSize(7);
         doc.setTextColor(50,42,18);
-        doc.text(b.label,sbx+sbw/2,staty+30,{align:'center'});
+        doc.text(b.label, sbx+sbw/2, sby+28, {align:'center'});
         sbx+=sbw+sgap;
       });
     }
@@ -751,8 +726,8 @@ function doPDF(){
     doc.setFont('helvetica','normal');
     doc.setFontSize(7);
     doc.setTextColor(65,60,45);
-    doc.text('esse\u00b0 Magazine \u2014 Rassegna Stampa Digitale',14,PH-5);
-    doc.text(today,PW-14,PH-5,{align:'right'});
+    doc.text('esse\u00b0 Magazine \u2014 Rassegna Stampa Digitale', 14, PH-5);
+    doc.text(today, PW-14, PH-5, {align:'right'});
         /* PAGINE CONTENUTO - 4 colonne fisse, 2 righe */
     var COLS=4, ROWS=2, perPage=COLS*ROWS;
     var pages=Math.ceil(posts.length/perPage);
