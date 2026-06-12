@@ -64,7 +64,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 @media(max-width:440px){.pgrid{grid-template-columns:1fr 1fr;gap:8px;}}
 .pcard{background:var(--w);border:2px solid var(--bd);border-radius:12px;overflow:hidden;transition:.15s;}
 .pcard:hover{border-color:#bbb;}
-.pthumb{width:100%;height:220px;object-fit:cover;display:block;}
+.pthumb{width:100%;height:220px;object-fit:cover;display:block;background:#eeede7;}
 @media(max-width:440px){.pthumb,.pph{height:150px!important;}}
 .pph{width:100%;height:220px;background:#eeede7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#c0bfb8;font-size:11px;text-transform:uppercase;letter-spacing:.1em;}
 .pbody{padding:10px 12px;}
@@ -107,8 +107,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .prev-cnt{font-size:10px;color:#444;margin-top:2px;text-align:right;}
 .prev-grid{display:grid;gap:2px;background:#e8e8e0;}
 .prev-item{background:#fff;}
-.prev-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;}
-.prev-ph{width:100%;aspect-ratio:4/3;background:#eeede7;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;text-transform:uppercase;}
+.prev-img{width:100%;height:200px;object-fit:cover;display:block;}
+.prev-ph{width:100%;height:200px;background:#eeede7;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;text-transform:uppercase;}
 .prev-meta{padding:10px 12px;border-top:1px solid #f0f0ec;}
 .prev-badge{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;text-transform:uppercase;color:var(--y);background:var(--k);display:inline-block;padding:2px 8px;border-radius:3px;margin-bottom:5px;}
 .prev-cap{font-size:11px;color:#555;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:3px;}
@@ -207,7 +207,23 @@ var LOGO='data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUA
 var S={artists:[],posts:{},sel:null};
 var AF='all',PI=null;
 function ld(){try{var d=localStorage.getItem('esse5');if(d)S=JSON.parse(d);}catch(e){}}
-function sv(){try{localStorage.setItem('esse5',JSON.stringify(S));}catch(e){}}
+function sv(){
+  try{
+    localStorage.setItem('esse5',JSON.stringify(S));
+  }catch(e){
+    console.warn('Storage full, trying without images');
+    // If storage fails (quota exceeded), save without images as fallback
+    var slim={artists:S.artists,posts:{},sel:S.sel};
+    Object.keys(S.posts).forEach(function(a){
+      slim.posts[a]=S.posts[a].map(function(p){
+        return {url:p.url,plat:p.plat,date:p.date,cap:p.cap,img:p.img};
+      });
+    });
+    try{localStorage.setItem('esse5',JSON.stringify(slim));}catch(e2){
+      alert('Attenzione: le immagini sono troppo grandi per essere salvate. Usa immagini piu piccole (sotto 1MB).');
+    }
+  }
+}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
 function goTab(n,b){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
@@ -293,7 +309,7 @@ function openM(idx){
     document.getElementById('mtitle').textContent='Modifica contenuto';
     document.getElementById('furl').value=p.url||'';document.getElementById('fplat').value=p.plat||'Instagram';
     document.getElementById('fdate').value=p.date||'';document.getElementById('fcap').value=p.cap||'';
-    if(p.img){PI=p.img;document.getElementById('flbl').textContent='\u2713 presente';document.getElementById('iprevimg').src=p.img;document.getElementById('iprev').style.display='';}
+    if(p.img){PI=p.img;document.getElementById('flbl').textContent='✓ presente';document.getElementById('iprevimg').src=p.img;document.getElementById('iprev').style.display='';}
     else{document.getElementById('flbl').textContent='Scegli immagine...';document.getElementById('iprev').style.display='none';}
   }
   document.getElementById('mbg').classList.add('open');document.body.style.overflow='hidden';
@@ -301,9 +317,26 @@ function openM(idx){
 function closeM(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
 function handleImg(inp){
   if(!inp.files||!inp.files[0])return;
-  var r=new FileReader();
-  r.onload=function(e){PI=e.target.result;document.getElementById('flbl').textContent='\u2713 caricata';document.getElementById('iprevimg').src=PI;document.getElementById('iprev').style.display='';};
-  r.readAsDataURL(inp.files[0]);
+  var file=inp.files[0];
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var maxW=1200,maxH=1200;
+      var w=img.width,h=img.height;
+      if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+      if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      PI=canvas.toDataURL('image/jpeg',0.82);
+      document.getElementById('flbl').textContent='✓ caricata ('+Math.round(PI.length/1024)+'KB)';
+      document.getElementById('iprevimg').src=PI;
+      document.getElementById('iprev').style.display='';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 function rmImg(){PI=null;document.getElementById('flbl').textContent='Scegli immagine...';document.getElementById('iprev').style.display='none';document.getElementById('iprevimg').src='';}
 function saveP(){
