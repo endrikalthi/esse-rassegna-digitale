@@ -669,38 +669,38 @@ function doPDF(){
     ctx.fillRect(0,0,CW,CH);
 
     // Logo
-    var logoY=55,logoW=196;
+    var logoY=66,logoW=241;
     var logoH=logoI?Math.round(logoW*(logoI.naturalHeight/logoI.naturalWidth)):20;
     if(logoI)ctx.drawImage(logoI,CCX-logoW/2,logoY,logoW,logoH);
 
     // Mascotte
-    var mascY=logoY+logoH+4;
-    var mascW=234;
+    var mascY=logoY+logoH+8;
+    var mascW=217;
     var mascH=mascotI?Math.round(mascW*(mascotI.naturalHeight/mascotI.naturalWidth)):280;
     if(mascotI)ctx.drawImage(mascotI,CCX-mascW/2,mascY,mascW,mascH);
 
-    var nameY=mascY+mascH+20;
+    var nameY=mascY+mascH+22;
 
     function drawText(){
       // Nome artista - grande
-      ctx.font='900 122px "MarcinAntique","Barlow Condensed","Arial Black",sans-serif';
+      ctx.font='900 132px "MarcinAntique","Barlow Condensed","Arial Black",sans-serif';
       ctx.fillStyle='#fff172';
       ctx.textAlign='center';
       ctx.fillText(a.toUpperCase(),CCX,nameY);
 
       // Subtitle
-      ctx.font='600 44px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
+      ctx.font='500 29px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#6e6650';
-      ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+62);
+      ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+48);
 
       // Count
-      ctx.font='700 52px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
+      ctx.font='700 31px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#b4aa82';
-      ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+62+54);
+      ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+48+36);
 
       // Stats
       if(sblocks.length>0){
-        var smarg=66,sgap=28,sbh=178,sby=CH-smarg-sbh;
+        var sby=nameY+48+36+55; var smarg=66,sgap=28,sbh=169;
         var sbw=(CW-smarg*2-sgap*(sblocks.length-1))/sblocks.length;
         var sbx=smarg;
         sblocks.forEach(function(b){
