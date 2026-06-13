@@ -42,12 +42,19 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--k);min-hei
 .sec-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--mu);margin-bottom:10px;}
 .divider{border:none;border-top:2px solid var(--bd);margin:20px 0;}
 .artist-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
-.achip{display:flex;align-items:center;gap:10px;background:var(--w);border:2px solid var(--bd);border-radius:10px;padding:9px 14px;cursor:pointer;transition:.15s;user-select:none;}
+.achip{display:flex;align-items:center;gap:10px;background:var(--w);border:2px solid var(--bd);border-radius:10px;padding:9px 14px;cursor:pointer;transition:.15s;user-select:none;position:relative;}
 .achip:hover{border-color:var(--k);}
 .achip.active{background:var(--k);border-color:var(--k);}
 .achip.active .aname{color:var(--y);}
 .achip.active .acnt{color:#555;}
 .achip.active .aava{background:var(--y);color:var(--k);}
+.achip-actions{display:none;position:absolute;top:4px;right:4px;flex-direction:column;gap:3px;}
+.achip:hover .achip-actions,.achip.active:hover .achip-actions{display:flex;}
+.achip-btn{background:rgba(255,255,255,0.92);border:1px solid rgba(0,0,0,0.18);border-radius:5px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;transition:.12s;padding:0;}
+.achip-btn:hover{background:#fff;border-color:#888;transform:scale(1.1);}
+.achip.active .achip-btn{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.4);color:#eee;}
+.achip.active .achip-btn:hover{background:rgba(255,255,255,0.32);}
+.achip-btn.del:hover{background:#fff0f0;border-color:#fbb;color:#c0392b;}
 .aava{width:32px;height:32px;border-radius:50%;background:var(--y);color:var(--k);font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .aname{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--k);}
 .acnt{font-size:11px;color:var(--mu);}
@@ -174,6 +181,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <input type="text" id="ainput" placeholder="Nome artista..." style="flex:1;min-width:160px;" onkeydown="if(event.key==='Enter')addA()" />
     <button class="btn btn-k" onclick="addA()">Crea</button>
     <button class="btn btn-o" onclick="hideIF()">Annulla</button>
+  </div>
+  <div class="inline-form" id="rform" style="display:none;align-items:center;gap:8px;background:var(--w);border:2px solid var(--bd);border-radius:10px;padding:12px 14px;margin-top:8px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--mu);font-weight:600;white-space:nowrap;">Rinomina:</span>
+    <input type="text" id="rinput" placeholder="Nuovo nome..." style="flex:1;min-width:160px;" onkeydown="if(event.key==='Enter')doRename();if(event.key==='Escape')closeRF();" />
+    <button class="btn btn-k" onclick="doRename()">Salva</button>
+    <button class="btn btn-o" onclick="closeRF()">Annulla</button>
   </div>
   <div id="psec" style="display:none;">
     <div class="divider"></div>
@@ -368,8 +381,13 @@ function renderA(){
   list.forEach(function(a){
     var c=(S.posts[a]||[]).length,el=document.createElement('div');
     el.className='achip'+(S.sel===a?' active':'');
-    el.innerHTML='<div class="aava">'+ini(a)+'</div><div><div class="aname">'+a+'</div><div class="acnt">'+c+' post</div></div>';
-    el.onclick=function(){selA(a);};r.appendChild(el);
+    var safe=a.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    el.innerHTML='<div class="aava">'+ini(a)+'</div><div style="flex:1;min-width:0;"><div class="aname">'+a+'</div><div class="acnt">'+c+' post</div></div>'
+      +'<div class="achip-actions">'
+      +'<button class="achip-btn" title="Rinomina" onclick="renameA(event,\''+safe+'\')">&#9998;</button>'
+      +'<button class="achip-btn del" title="Elimina" onclick="deleteA(event,\''+safe+'\')">&#128465;</button>'
+      +'</div>';
+    el.onclick=function(e){if(!e.target.closest('.achip-actions'))selA(a);};r.appendChild(el);
   });
   var b=document.createElement('button');b.className='add-artist-btn';b.textContent='+ Nuovo artista';b.onclick=showIF;r.appendChild(b);
 }
@@ -388,6 +406,54 @@ function selA(a){
   document.getElementById('psec').style.display='';
   document.getElementById('ptitle').textContent=a;
   renderP();renderA();
+}
+var _renameTarget=null;
+function renameA(e,a){
+  e.stopPropagation();
+  _renameTarget=a;
+  hideIF();
+  var rf=document.getElementById('rform');
+  var ri=document.getElementById('rinput');
+  ri.value=a;
+  rf.style.display='flex';
+  ri.focus();ri.select();
+}
+function closeRF(){
+  document.getElementById('rform').style.display='none';
+  _renameTarget=null;
+}
+function doRename(){
+  var newName=document.getElementById('rinput').value.trim();
+  if(!newName){alert('Inserisci un nome');return;}
+  if(!_renameTarget)return;
+  if(newName===_renameTarget){closeRF();return;}
+  if(S.artists.indexOf(newName)>=0){alert('Esiste gi\u00e0 un artista con questo nome');return;}
+  var idx=S.artists.indexOf(_renameTarget);
+  if(idx<0)return;
+  S.artists[idx]=newName;
+  S.posts[newName]=S.posts[_renameTarget]||[];
+  delete S.posts[_renameTarget];
+  if(S.sel===_renameTarget){
+    S.sel=newName;
+    document.getElementById('ptitle').textContent=newName;
+  }
+  sv();closeRF();renderA();renderP();
+}
+function deleteA(e,a){
+  e.stopPropagation();
+  var c=(S.posts[a]||[]).length;
+  var msg=c>0
+    ?'Eliminare "'+a+'" e tutti i suoi '+c+' contenuti? Questa azione non pu\u00f2 essere annullata.'
+    :'Eliminare "'+a+'"?';
+  if(!confirm(msg))return;
+  var idx=S.artists.indexOf(a);
+  if(idx>=0)S.artists.splice(idx,1);
+  delete S.posts[a];
+  if(S.sel===a){
+    S.sel=null;
+    document.getElementById('psec').style.display='none';
+  }
+  sv();renderA();renderP();
 }
 function setF(f,el){AF=f;document.querySelectorAll('.fc').forEach(function(c){c.classList.remove('on');});el.classList.add('on');renderP();}
 function getFP(){
