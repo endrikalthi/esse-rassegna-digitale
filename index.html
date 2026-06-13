@@ -679,10 +679,13 @@ function doPDF(){
     var nameFS=128, sbh=165, subFS=34, cntFS=42;
     var nameAscH=Math.round(nameFS*0.82);
 
-    // Calcola combY dinamicamente per centrare verticalmente con o senza stats
+    // Calcola combY per bilanciare spazio sopra/sotto come nel template
+    // nameY = combY + combH + nameAscH + 65
+    var nameOffset=combH+nameAscH+65;                          // offset nameY da combY
     var hasS=sblocks.length>0;
-    var blockH=combH+65+nameAscH+68+Math.round(subFS*0.8)+49+Math.round(cntFS*0.8)+(hasS?(214+sbh):0);
-    var combY=Math.round((CH-blockH)/2)-10; // -10 = leggero shift verso l'alto
+    var blockH=hasS?(nameOffset+214+sbh):(nameOffset+117+Math.round(cntFS*0.2));
+    // Template ratio: spazio_sopra / spazio_totale_libero = 37.4%
+    var combY=Math.round(0.374*(CH-blockH));
     if(combY<40)combY=40;
 
     if(mascotI){
