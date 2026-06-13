@@ -162,7 +162,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="page active" id="page-g">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
     <div class="sec-label" style="margin:0;">Artisti</div>
-    <button onclick="resetAll()" style="font-size:11px;color:#aaa;background:none;border:1px solid #ddd;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">Resetta dati</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button id="sort-az-btn" onclick="toggleArtistSort()" style="font-size:11px;background:none;border:1px solid #ddd;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;color:#555;display:flex;align-items:center;gap:5px;">
+        <span id="sort-az-icon">↑↓</span> <span id="sort-az-label">A→Z</span>
+      </button>
+      <button onclick="resetAll()" style="font-size:11px;color:#aaa;background:none;border:1px solid #ddd;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">Resetta dati</button>
+    </div>
   </div>
   <div class="artist-row" id="arow"></div>
   <div class="inline-form" id="iform">
@@ -199,6 +204,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <option value="YouTube">Solo YouTube</option>
     </select>
     <div style="display:flex;gap:6px;margin-left:auto;">
+      <select id="esort" onchange="loadExportPosts()" style="font-size:12px;padding:9px 12px;border-radius:8px;border:1.5px solid #ddd;background:#fff;font-family:inherit;cursor:pointer;">
+        <option value="newest">Più recenti prima</option>
+        <option value="oldest">Più vecchi prima</option>
+      </select>
       <button class="btn btn-o" onclick="toggleAllSel()" id="selbtn" style="font-size:12px;padding:9px 14px;">Deseleziona tutti</button>
       <button class="btn btn-y" id="pdfbtn" onclick="doPDF()">Scarica PDF</button>
     </div>
@@ -333,9 +342,23 @@ function goTab(n,b){
   if(n==='e')fillES();
 }
 function ini(n){return n.trim().split(/\s+/).map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
+var artistSortAZ=false;
+function toggleArtistSort(){
+  artistSortAZ=!artistSortAZ;
+  document.getElementById('sort-az-icon').textContent=artistSortAZ?'A↑':'↑↓';
+  document.getElementById('sort-az-label').textContent=artistSortAZ?'Z→A':'A→Z';
+  var btn=document.getElementById('sort-az-btn');
+  btn.style.borderColor=artistSortAZ?'#0d0d0d':'#ddd';
+  btn.style.color=artistSortAZ?'#0d0d0d':'#555';
+  btn.style.fontWeight=artistSortAZ?'700':'400';
+  renderA();
+}
+
 function renderA(){
   var r=document.getElementById('arow');r.innerHTML='';
-  S.artists.forEach(function(a){
+  var list=S.artists.slice();
+  if(artistSortAZ) list.sort(function(a,b){return a.localeCompare(b,'it');});
+  list.forEach(function(a){
     var c=(S.posts[a]||[]).length,el=document.createElement('div');
     el.className='achip'+(S.sel===a?' active':'');
     el.innerHTML='<div class="aava">'+ini(a)+'</div><div><div class="aname">'+a+'</div><div class="acnt">'+c+' post</div></div>';
@@ -474,7 +497,15 @@ function loadExportPosts(){
     return;
   }
   var pf=document.getElementById('efilt').value;
-  var posts=S.posts[a]||[];
+  var sortEl=document.getElementById('esort');
+  var sortDir=sortEl?sortEl.value:'newest';
+  var posts=(S.posts[a]||[]).slice();
+  // Ordina per data
+  posts.sort(function(a,b){
+    var da=a.date?new Date(a.date):new Date(0);
+    var db=b.date?new Date(b.date):new Date(0);
+    return sortDir==='newest'?(db-da):(da-db);
+  });
   var filtered=pf==='all'?posts:posts.filter(function(p){return p.plat===pf;});
 
   // Init all selected
@@ -523,7 +554,15 @@ function updateSelCount(sel,total){
 function toggleAllSel(){
   var a=document.getElementById('esel').value;if(!a)return;
   var pf=document.getElementById('efilt').value;
-  var posts=S.posts[a]||[];
+  var sortEl=document.getElementById('esort');
+  var sortDir=sortEl?sortEl.value:'newest';
+  var posts=(S.posts[a]||[]).slice();
+  // Ordina per data
+  posts.sort(function(a,b){
+    var da=a.date?new Date(a.date):new Date(0);
+    var db=b.date?new Date(b.date):new Date(0);
+    return sortDir==='newest'?(db-da):(da-db);
+  });
   var filtered=pf==='all'?posts:posts.filter(function(p){return p.plat===pf;});
   var cards=document.querySelectorAll('.sel-card');
   if(selectedIdxs.length===filtered.length){
@@ -544,7 +583,15 @@ function toggleAllSel(){
 function getEP(){
   var a=document.getElementById('esel').value;if(!a)return[];
   var pf=document.getElementById('efilt').value;
-  var posts=S.posts[a]||[];
+  var sortEl=document.getElementById('esort');
+  var sortDir=sortEl?sortEl.value:'newest';
+  var posts=(S.posts[a]||[]).slice();
+  // Ordina per data
+  posts.sort(function(a,b){
+    var da=a.date?new Date(a.date):new Date(0);
+    var db=b.date?new Date(b.date):new Date(0);
+    return sortDir==='newest'?(db-da):(da-db);
+  });
   var filtered=pf==='all'?posts:posts.filter(function(p){return p.plat===pf;});
   return selectedIdxs.map(function(i){return filtered[i];}).filter(Boolean);
 }
