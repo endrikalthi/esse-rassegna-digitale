@@ -673,17 +673,23 @@ function doPDF(){
     ctx.fillStyle='#1e1b16';
     ctx.fillRect(0,0,CW,CH);
 
-    // Immagine combinata logo+mascotte — 270px larghezza fissa
+    // Immagine combinata logo+mascotte
     var combW=290;
-    var combH=Math.round(combW*(1237/901));  // ~522px
-    var combY=83;
+    var combH=Math.round(combW*(1237/901));
+    var nameFS=128, sbh=165, subFS=34, cntFS=42;
+    var nameAscH=Math.round(nameFS*0.82);
+
+    // Calcola combY dinamicamente per centrare verticalmente con o senza stats
+    var hasS=sblocks.length>0;
+    var blockH=combH+65+nameAscH+68+Math.round(subFS*0.8)+49+Math.round(cntFS*0.8)+(hasS?(214+sbh):0);
+    var combY=Math.round((CH-blockH)/2)-10; // -10 = leggero shift verso l'alto
+    if(combY<40)combY=40;
+
     if(mascotI){
       ctx.drawImage(mascotI, CCX-combW/2, combY, combW, combH);
     }
 
-    // Nome artista: baseline = fondo immagine + ascender font (128px) + gap 18px
-    var nameFS=128;
-    var nameY=combY+combH+Math.round(nameFS*0.82)+65;
+    var nameY=combY+combH+nameAscH+65;
 
     function drawText(){
       // Nome artista — letter spacing stretto
@@ -706,7 +712,7 @@ function doPDF(){
 
       // Stats
       if(sblocks.length>0){
-        var sbh=212,smarg=66,sgap=28,sby=nameY+214;
+        var smarg=66,sgap=28,sby=nameY+214;
         var sbw=(CW-smarg*2-sgap*(sblocks.length-1))/sblocks.length;
         var sbx=smarg;
         sblocks.forEach(function(b){
@@ -719,10 +725,10 @@ function doPDF(){
           ctx.closePath();ctx.fill();
           ctx.font='700 112px "MarcinCondensed","Barlow Condensed","Arial Black",sans-serif';
           ctx.fillStyle='#141208';ctx.textAlign='center';
-          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+Math.round(sbh*0.50));
+          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+Math.round(sbh*0.52));
           ctx.font='600 32px "MarcinStd","Barlow Condensed",Arial,sans-serif';
           ctx.fillStyle='#32280e';
-          ctx.fillText(b.label,sbx+sbw/2,sby+Math.round(sbh*0.80));
+          ctx.fillText(b.label,sbx+sbw/2,sby+Math.round(sbh*0.83));
           sbx+=sbw+sgap;
         });
       }
