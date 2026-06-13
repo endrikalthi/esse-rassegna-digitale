@@ -707,7 +707,7 @@ function doPDF(){
 
       // Count
       ctx.font='700 42px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
-      ctx.fillStyle='#b4aa82';
+      ctx.fillStyle='#d8d0b0';
       ctx.letterSpacing='-0.5px'; ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+117); ctx.letterSpacing='0px';
 
       // Stats
@@ -723,12 +723,12 @@ function doPDF(){
           ctx.lineTo(sbx+r,sby+sbh);ctx.quadraticCurveTo(sbx,sby+sbh,sbx,sby+sbh-r);
           ctx.lineTo(sbx,sby+r);ctx.quadraticCurveTo(sbx,sby,sbx+r,sby);
           ctx.closePath();ctx.fill();
-          ctx.font='700 112px "MarcinCondensed","Barlow Condensed","Arial Black",sans-serif';
+          ctx.font='700 85px "MarcinCondensed","Barlow Condensed","Arial Black",sans-serif';
           ctx.fillStyle='#141208';ctx.textAlign='center';
-          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+Math.round(sbh*0.52));
-          ctx.font='600 32px "MarcinStd","Barlow Condensed",Arial,sans-serif';
+          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+Math.round(sbh*0.617));
+          ctx.font='600 30px "MarcinStd","Barlow Condensed",Arial,sans-serif';
           ctx.fillStyle='#32280e';
-          ctx.fillText(b.label,sbx+sbw/2,sby+Math.round(sbh*0.83));
+          ctx.fillText(b.label,sbx+sbw/2,sby+Math.round(sbh*0.775));
           sbx+=sbw+sgap;
         });
       }
