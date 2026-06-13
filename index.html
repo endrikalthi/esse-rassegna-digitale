@@ -674,7 +674,7 @@ function doPDF(){
     ctx.fillRect(0,0,CW,CH);
 
     // Immagine combinata logo+mascotte — 270px larghezza fissa
-    var combW=340;
+    var combW=290;
     var combH=Math.round(combW*(1237/901));  // ~522px
     var combY=83;
     if(mascotI){
@@ -683,7 +683,7 @@ function doPDF(){
 
     // Nome artista: baseline = fondo immagine + ascender font (128px) + gap 18px
     var nameFS=128;
-    var nameY=combY+combH+Math.round(nameFS*0.82)+18;
+    var nameY=combY+combH+Math.round(nameFS*0.82)+65;
 
     function drawText(){
       // Nome artista — letter spacing stretto
@@ -697,16 +697,16 @@ function doPDF(){
       // Subtitle
       ctx.font='500 24px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#6e6650';
-      ctx.letterSpacing='-0.5px'; ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+45); ctx.letterSpacing='0px';
+      ctx.letterSpacing='-0.5px'; ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+38); ctx.letterSpacing='0px';
 
       // Count
       ctx.font='700 30px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#b4aa82';
-      ctx.letterSpacing='-0.5px'; ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+71); ctx.letterSpacing='0px';
+      ctx.letterSpacing='-0.5px'; ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+64); ctx.letterSpacing='0px';
 
       // Stats
       if(sblocks.length>0){
-        var sbh=185,smarg=66,sgap=28,sby=nameY+179;
+        var sbh=185,smarg=66,sgap=28,sby=nameY+161;
         var sbw=(CW-smarg*2-sgap*(sblocks.length-1))/sblocks.length;
         var sbx=smarg;
         sblocks.forEach(function(b){
