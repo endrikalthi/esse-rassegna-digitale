@@ -196,7 +196,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="page" id="page-e">
   <div class="etoolbar">
     <span class="flabel">Artista</span>
-    <select id="esel" onchange="selectedUrls=new Set();loadExportPosts();" style="flex:1;max-width:220px;"></select>
+    <select id="esel" onchange="resetExportSel=true;loadExportPosts();" style="flex:1;max-width:220px;"></select>
     <select id="efilt" onchange="loadExportPosts()" style="width:auto;min-width:140px;padding:9px 12px;font-size:13px;">
       <option value="all">Tutte le piattaforme</option>
       <option value="Instagram">Solo Instagram</option>
@@ -489,6 +489,8 @@ function fillES(){
 }
 
 var selectedIdxs=[];
+var selectedUrls=new Set();
+var resetExportSel=false;
 
 function loadExportPosts(){
   var a=document.getElementById('esel').value;
@@ -511,8 +513,21 @@ function loadExportPosts(){
   });
   var filtered=pf==='all'?posts:posts.filter(function(p){return p.plat===pf;});
 
-  // Init all selected
-  selectedIdxs=filtered.map(function(_,i){return i;});
+  // Reset se cambia artista (flag impostato da onchange)
+  if(resetExportSel){
+    selectedUrls=new Set();
+    resetExportSel=false;
+  }
+  // Selezione basata su URL: mantieni se già scelti, altrimenti seleziona tutto
+  if(selectedUrls.size===0){
+    selectedIdxs=filtered.map(function(_,i){return i;});
+    selectedUrls=new Set(filtered.map(function(p){return p.url||'';}));
+  } else {
+    selectedIdxs=[];
+    filtered.forEach(function(p,i){
+      if(selectedUrls.has(p.url||''))selectedIdxs.push(i);
+    });
+  }
   renderSelCards(filtered);
   renderPrev();
 }
@@ -535,7 +550,7 @@ function renderSelCards(filtered){
       +(p.date?'<div class="sel-date">'+p.date+'</div>':'')
       +(p.cap?'<div class="sel-cap">'+p.cap+'</div>':'')
       +'</div>';
-    card.onclick=function(){toggleSel(i,card,filtered.length);};
+    card.onclick=function(){toggleSel(i,card,filtered.length,p.url||"");};
     cards.appendChild(card);
   });
   document.getElementById('selbtn').textContent='Deseleziona tutti';
