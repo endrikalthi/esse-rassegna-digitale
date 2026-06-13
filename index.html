@@ -673,17 +673,17 @@ function doPDF(){
     ctx.fillStyle='#1e1b16';
     ctx.fillRect(0,0,CW,CH);
 
-    // Immagine combinata logo+mascotte (esse° + pupazzetto in un unico PNG)
-    // Proporzioni: 914x1254px → 30% della larghezza canvas
-    var combW=Math.round(CW*0.22);
-    var combH=Math.round(combW*(1237/901));
+    // Immagine combinata logo+mascotte — 270px larghezza fissa
+    var combW=270;
+    var combH=Math.round(combW*(1237/901));  // ~370px
     var combY=20;
     if(mascotI){
       ctx.drawImage(mascotI, CCX-combW/2, combY, combW, combH);
     }
 
-    // Nome artista posizionato sotto l'immagine combinata
-    var nameY=combY+combH+28;
+    // Nome artista: baseline = fondo immagine + ascender font (128px) + gap 18px
+    var nameFS=128;
+    var nameY=combY+combH+Math.round(nameFS*0.82)+18;
 
     function drawText(){
       // Nome artista — letter spacing stretto
@@ -697,16 +697,16 @@ function doPDF(){
       // Subtitle
       ctx.font='600 29px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#6e6650';
-      ctx.letterSpacing='-0.5px'; ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+25+38); ctx.letterSpacing='0px';
+      ctx.letterSpacing='-0.5px'; ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+25); ctx.letterSpacing='0px';
 
       // Count
       ctx.font='700 31px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#b4aa82';
-      ctx.letterSpacing='-0.5px'; ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+25+38+18+38); ctx.letterSpacing='0px';
+      ctx.letterSpacing='-0.5px'; ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+25+18+30); ctx.letterSpacing='0px';
 
       // Stats
       if(sblocks.length>0){
-        var sby=nameY+25+38+18+38+55; var smarg=66,sgap=28,sbh=Math.round(CH-(nameY+25+38+18+38+55)-66);
+        var sbh=190,smarg=66,sgap=28,sby=CH-sbh-smarg;
         var sbw=(CW-smarg*2-sgap*(sblocks.length-1))/sblocks.length;
         var sbx=smarg;
         sblocks.forEach(function(b){
@@ -719,10 +719,10 @@ function doPDF(){
           ctx.closePath();ctx.fill();
           ctx.font='700 112px "MarcinCondensed","Barlow Condensed","Arial Black",sans-serif';
           ctx.fillStyle='#141208';ctx.textAlign='center';
-          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+sbh*0.56);
+          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+Math.round(sbh*0.52));
           ctx.font='600 32px "MarcinStd","Barlow Condensed",Arial,sans-serif';
           ctx.fillStyle='#32280e';
-          ctx.fillText(b.label,sbx+sbw/2,sby+sbh*0.83);
+          ctx.fillText(b.label,sbx+sbw/2,sby+Math.round(sbh*0.82));
           sbx+=sbw+sgap;
         });
       }
