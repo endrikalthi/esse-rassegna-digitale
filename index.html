@@ -695,18 +695,18 @@ function doPDF(){
       if(ctx.letterSpacing!==undefined)ctx.letterSpacing='0px';
 
       // Subtitle
-      ctx.font='500 24px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
+      ctx.font='500 34px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#6e6650';
-      ctx.letterSpacing='-0.5px'; ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+38); ctx.letterSpacing='0px';
+      ctx.letterSpacing='-0.5px'; ctx.fillText('RASSEGNA CONTENUTI - '+today.toUpperCase(),CCX,nameY+68); ctx.letterSpacing='0px';
 
       // Count
-      ctx.font='700 30px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
+      ctx.font='700 42px "MarcinAntique","Barlow Condensed",Arial,sans-serif';
       ctx.fillStyle='#b4aa82';
-      ctx.letterSpacing='-0.5px'; ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+64); ctx.letterSpacing='0px';
+      ctx.letterSpacing='-0.5px'; ctx.fillText(posts.length+' CONTENUTI PUBBLICATI',CCX,nameY+117); ctx.letterSpacing='0px';
 
       // Stats
       if(sblocks.length>0){
-        var sbh=185,smarg=66,sgap=28,sby=nameY+161;
+        var sbh=212,smarg=66,sgap=28,sby=nameY+214;
         var sbw=(CW-smarg*2-sgap*(sblocks.length-1))/sblocks.length;
         var sbx=smarg;
         sblocks.forEach(function(b){
@@ -719,10 +719,10 @@ function doPDF(){
           ctx.closePath();ctx.fill();
           ctx.font='700 112px "MarcinCondensed","Barlow Condensed","Arial Black",sans-serif';
           ctx.fillStyle='#141208';ctx.textAlign='center';
-          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+Math.round(sbh*0.52));
+          ctx.fillText(formatNum(b.val),sbx+sbw/2,sby+Math.round(sbh*0.50));
           ctx.font='600 32px "MarcinStd","Barlow Condensed",Arial,sans-serif';
           ctx.fillStyle='#32280e';
-          ctx.fillText(b.label,sbx+sbw/2,sby+Math.round(sbh*0.82));
+          ctx.fillText(b.label,sbx+sbw/2,sby+Math.round(sbh*0.80));
           sbx+=sbw+sgap;
         });
       }
