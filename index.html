@@ -295,7 +295,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="fg"><span class="flabel">Immagine preview (opzionale)</span>
         <div class="fwrap">
           <div class="ffake">📷 <span id="flbl">Scegli immagine...</span></div>
-          <input type="file" accept="image/*" onchange="handleImg(this)" />
+          <input type="file" id="fimginput" accept="image/*" onchange="handleImg(this)" />
         </div>
         <div id="iprev" style="display:none;margin-top:8px;">
           <img id="iprevimg" style="width:100%;height:160px;object-fit:cover;border-radius:8px;border:2px solid var(--bd);" />
@@ -326,7 +326,7 @@ function sv(){
     var slim={artists:S.artists,posts:{},sel:S.sel};
     Object.keys(S.posts).forEach(function(a){
       slim.posts[a]=S.posts[a].map(function(p){
-        return {url:p.url,plat:p.plat,date:p.date,cap:p.cap,img:p.img};
+        return {url:p.url,plat:p.plat,date:p.date,cap:p.cap,views:p.views,likes:p.likes,comments:p.comments,saves:p.saves}; // strip img to save space
       });
     });
     try{localStorage.setItem('esse5',JSON.stringify(slim));}catch(e2){
@@ -442,6 +442,7 @@ function openM(idx){
     document.getElementById('fdate').value=new Date().toISOString().split('T')[0];
     document.getElementById('fcap').value='';document.getElementById('fviews').value='';document.getElementById('flikes').value='';document.getElementById('fcomments').value='';document.getElementById('fsaves').value='';document.getElementById('flbl').textContent='Scegli immagine...';
     document.getElementById('iprev').style.display='none';
+    var fi=document.getElementById('fimginput');if(fi)fi.value='';
   } else {
     var p=S.posts[S.sel][idx];
     document.getElementById('mtitle').textContent='Modifica contenuto';
@@ -449,6 +450,7 @@ function openM(idx){
     document.getElementById('fdate').value=p.date||'';document.getElementById('fcap').value=p.cap||'';document.getElementById('fviews').value=p.views||'';document.getElementById('flikes').value=p.likes||'';document.getElementById('fcomments').value=p.comments||'';document.getElementById('fsaves').value=p.saves||'';
     if(p.img){PI=p.img;document.getElementById('flbl').textContent='✓ presente';document.getElementById('iprevimg').src=p.img;document.getElementById('iprev').style.display='';}
     else{document.getElementById('flbl').textContent='Scegli immagine...';document.getElementById('iprev').style.display='none';}
+    var fi2=document.getElementById('fimginput');if(fi2)fi2.value='';
   }
   document.getElementById('mbg').classList.add('open');document.body.style.overflow='hidden';
 }
@@ -456,18 +458,25 @@ function closeM(){document.getElementById('mbg').classList.remove('open');docume
 function handleImg(inp){
   if(!inp.files||!inp.files[0])return;
   var file=inp.files[0];
+  // Check file size - warn if too large
+  if(file.size>2*1024*1024){
+    if(!confirm('Immagine grande ('+Math.round(file.size/1024/1024)+'MB). Potrebbe causare problemi di spazio. Continuare?'))return;
+  }
   var reader=new FileReader();
+  reader.onerror=function(){alert('Errore nel leggere il file immagine.');};
   reader.onload=function(e){
     var img=new Image();
+    img.onerror=function(){alert('Impossibile caricare l\'immagine. Controlla il formato del file.');};
     img.onload=function(){
       var canvas=document.createElement('canvas');
-      var maxW=900,maxH=900;
+      var maxW=800,maxH=800;
       var w=img.width,h=img.height;
       if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
       if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
       canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      PI=canvas.toDataURL('image/jpeg',0.75);
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      PI=canvas.toDataURL('image/jpeg',0.7);
       var kb=Math.round(PI.length/1024);
       document.getElementById('flbl').textContent='✓ caricata ('+kb+'KB)';
       document.getElementById('iprevimg').src=PI;
